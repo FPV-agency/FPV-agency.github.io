@@ -19,7 +19,11 @@ export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
           transition={{ duration: 0.8 }}
           className="text-3xl sm:text-5xl md:text-7xl font-bold mb-4 leading-tight max-w-5xl mx-auto"
         >
-          {t('hero-title')}
+          {lang === 'ua' ? (
+            <>Майбутнє ваших продажів починається з <span className="gradient-underline-broken">оригінального</span> лендингу</>
+          ) : (
+            <>The future of your sales starts with an <span className="gradient-underline-broken">original</span> landing page</>
+          )}
         </motion.h1>
         
         <motion.p 
@@ -31,12 +35,12 @@ export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
           {lang === 'ua' ? (
             <>
               Професійні лендінг сторінки з високою конверсією <br />
-              від FPV (<span className="text-shimmer-effect">the Future Pages Vibe</span>)
+              від <span className="font-extrabold text-white">FPV</span> (<span className="text-shimmer-effect">the Future Pages Vibe</span>)
             </>
           ) : (
             <>
               High-converting landing pages <br />
-              by FPV (<span className="text-shimmer-effect">the Future Pages Vibe</span>)
+              by <span className="font-extrabold text-white">FPV</span> (<span className="text-shimmer-effect">the Future Pages Vibe</span>)
             </>
           )}
         </motion.p>

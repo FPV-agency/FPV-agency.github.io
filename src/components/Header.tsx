@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
 
         {/* Brand Name - Visible in landscape and large screens, but and desktop */}
         <div className="absolute left-44 top-1/2 -translate-y-1/2 hidden landscape:block xl:block">
-           <span className="text-xl font-bold gradient-text">the Future Pages Vibe</span>
+           <span className="text-xl font-extrabold gradient-text">the Future Pages Vibe</span>
         </div>
 
         {/* Tablet/Mobile View Controls - hidden on large desktop */}
@@ -75,19 +75,20 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
             </a>
           ))}
 
-          <div className="flex bg-gray-900 rounded-full p-1 border border-white/10">
-            <button
-              onClick={() => setLang('ua')}
+          <div 
+            className="flex bg-gray-900 rounded-full p-1 border border-white/10 cursor-pointer select-none"
+            onClick={() => setLang(lang === 'ua' ? 'en' : 'ua')}
+          >
+            <div
               className={`px-3 py-1 rounded-full text-xs transition ${lang === 'ua' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}
             >
               UA
-            </button>
-            <button
-              onClick={() => setLang('en')}
+            </div>
+            <div
               className={`px-3 py-1 rounded-full text-xs transition ${lang === 'en' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}
             >
               EN
-            </button>
+            </div>
           </div>
 
           <button className="btn-primary px-6 py-2 rounded-full font-semibold text-sm">
@@ -139,11 +140,14 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
             </a>
           ))}
           <div className="w-full flex justify-between items-center pt-6 border-t border-white/10">
-            <div className="flex bg-gray-900 rounded-full p-1">
-              <button onClick={() => setLang('ua')} className={`px-4 py-1 rounded-full text-xs font-bold ${lang === 'ua' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}>UA</button>
-              <button onClick={() => setLang('en')} className={`px-4 py-1 rounded-full text-xs font-bold ${lang === 'en' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}>EN</button>
+            <div 
+              className="flex bg-gray-900 rounded-full p-1 cursor-pointer select-none"
+              onClick={() => setLang(lang === 'ua' ? 'en' : 'ua')}
+            >
+              <div className={`px-4 py-1 rounded-full text-xs font-bold transition ${lang === 'ua' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}>UA</div>
+              <div className={`px-4 py-1 rounded-full text-xs font-bold transition ${lang === 'en' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}>EN</div>
             </div>
-            <button className="btn-primary px-6 py-2 rounded-full text-xs font-bold font-semibold">{t('quote-btn')}</button>
+            <button className="btn-primary px-6 py-2 rounded-full text-xs font-bold">{t('quote-btn')}</button>
           </div>
         </div>
       )}
