@@ -8,6 +8,18 @@ interface HeroProps {
   lang: Language;
 }
 
+const FirstLetterLarger: React.FC<{ text: string }> = ({ text }) => {
+  if (!text) return null;
+  const first = text.charAt(0);
+  const rest = text.slice(1);
+  return (
+    <>
+      <span className="text-[1.2em] leading-none inline-block">{first}</span>
+      {rest}
+    </>
+  );
+};
+
 export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
   return (
     <section id="hero" className="pt-28 pb-20 sm:pt-40 px-4 relative overflow-hidden">
@@ -20,9 +32,9 @@ export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
           className="text-3xl sm:text-5xl md:text-7xl font-bold mb-4 leading-tight max-w-5xl mx-auto"
         >
           {lang === 'ua' ? (
-            <>Майбутнє ваших продажів починається з <span className="gradient-underline-broken">оригінального</span> лендингу</>
+            <>Майбутнє Ваших продажів починається з <span className="gradient-underline-broken">оригінального</span> лендингу</>
           ) : (
-            <>The future of your sales starts with an <span className="gradient-underline-broken">original</span> landing page</>
+            <>The future of Your sales starts with an <span className="gradient-underline-broken">original</span> landing page</>
           )}
         </motion.h1>
         
@@ -54,7 +66,7 @@ export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
           <a href="#portfolio" className="btn-primary px-10 py-4 rounded-full text-lg font-bold shadow-lg shadow-neon-blue/20 hover:scale-105 transition-transform btn-shimmer-effect">
             {t('hero-portfolio-btn')}
           </a>
-          <a href="#contact" className="px-10 py-4 rounded-full text-lg font-bold border border-neon-blue text-neon-blue hover:bg-neon-blue/10 transition-colors">
+          <a href="#consultation" className="px-10 py-4 rounded-full text-lg font-bold border border-neon-blue text-neon-blue hover:bg-neon-blue/10 transition-colors">
             {t('hero-consultation-btn')}
           </a>
         </motion.div>
@@ -73,8 +85,10 @@ export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
               transition={{ delay: stat.delay }}
               className="text-center"
             >
-              <div className="text-4xl font-bold gradient-text mb-2">{stat.num}</div>
-              <div className="text-gray-500 uppercase tracking-widest text-xs font-semibold">{stat.text}</div>
+              <div className="text-4xl font-bold gradient-text mb-2 tracking-tighter">{stat.num}</div>
+              <div className="text-gray-500 uppercase tracking-widest text-xs font-semibold">
+                <FirstLetterLarger text={stat.text} />
+              </div>
             </motion.div>
           ))}
         </div>

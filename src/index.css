@@ -16,6 +16,10 @@
   --header-height: 80px;
 }
 
+@utility pause-animations {
+  animation-play-state: paused !important;
+}
+
 @layer base {
   :root {
     --header-height: 72px;
@@ -44,6 +48,58 @@
     -webkit-background-clip: text;
     background-clip: text;
     @apply text-transparent;
+  }
+
+  .gradient-text-blue-purple {
+    background: linear-gradient(90deg, var(--color-neon-blue), var(--color-neon-violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    @apply text-transparent;
+  }
+
+  .gradient-text-purple-pink {
+    background: linear-gradient(90deg, var(--color-neon-violet), var(--color-neon-pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    @apply text-transparent;
+  }
+
+  .gradient-text-pink-orange {
+    background: linear-gradient(90deg, var(--color-neon-pink), var(--color-neon-orange));
+    -webkit-background-clip: text;
+    background-clip: text;
+    @apply text-transparent;
+  }
+
+  @keyframes rotate-border {
+    from { stop-color: #29cfde; }
+    33% { stop-color: #a855f7; }
+    66% { stop-color: #ec4899; }
+    to { stop-color: #29cfde; }
+  }
+
+  .border-rotating-glow {
+    position: relative;
+    z-index: 0;
+  }
+
+  .border-rotating-glow::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    background: conic-gradient(from 0deg, #29cfde, #a855f7, #ec4899, #f59e0b, #29cfde);
+    border-radius: inherit;
+    animation: rotate 3s linear infinite;
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .btn-shimmer-effect {
@@ -85,6 +141,70 @@
   .btn-primary {
     background: linear-gradient(90deg, var(--color-neon-blue), var(--color-neon-violet), var(--color-neon-pink), var(--color-neon-orange));
     @apply text-white transition-all duration-300;
+  }
+
+  .advantage-card {
+    @apply bg-white/5 backdrop-blur-sm rounded-3xl border-2 border-neon-blue/80 transition-all duration-300 shadow-[0_0_15px_rgba(41,207,222,0.1)];
+  }
+
+  .advantage-card:hover {
+    @apply bg-dark-card border-transparent;
+    background-image: linear-gradient(var(--color-dark-card), var(--color-dark-card)), 
+                      linear-gradient(90deg, var(--color-neon-blue), var(--color-neon-violet), var(--color-neon-pink), var(--color-neon-orange));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    border: 2px solid transparent;
+  }
+
+  .gradient-step-num {
+    background: linear-gradient(135deg, var(--color-neon-blue), var(--color-neon-violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    @apply transition-all duration-500;
+  }
+
+  @keyframes processPulseLeft {
+    0%, 25%, 100% {
+      border-left-color: rgba(255, 255, 255, 0.1);
+      box-shadow: -10px 0 15px -3px rgba(0, 0, 0, 0.2);
+    }
+    8%, 18% {
+      border-left-color: rgba(41, 207, 222, 0.6);
+      box-shadow: -15px 0 30px -5px rgba(41, 207, 222, 0.3);
+    }
+  }
+
+  @keyframes processPulseRight {
+    0%, 25%, 100% {
+      border-right-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 10px 0 15px -3px rgba(0, 0, 0, 0.2);
+    }
+    8%, 18% {
+      border-right-color: rgba(41, 207, 222, 0.6);
+      box-shadow: 15px 0 30px -5px rgba(41, 207, 222, 0.3);
+    }
+  }
+
+  @keyframes numberPulse {
+    0%, 25%, 100% {
+      opacity: 0.15;
+    }
+    8%, 18% {
+      opacity: 0.65;
+    }
+  }
+
+  .process-card-pulse-left {
+    animation: processPulseLeft 12s infinite ease-in-out;
+  }
+
+  .process-card-pulse-right {
+    animation: processPulseRight 12s infinite ease-in-out;
+  }
+
+  .process-number-pulse {
+    animation: numberPulse 12s infinite ease-in-out;
   }
 
   .nav-link {
@@ -216,6 +336,27 @@
 @keyframes text-gradient-flow {
   0% { background-position: 300% 0; }
   100% { background-position: 0% 0; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-text-4color {
+  background: linear-gradient(
+    90deg, 
+    var(--color-neon-blue), 
+    var(--color-neon-violet), 
+    var(--color-neon-pink), 
+    var(--color-neon-orange)
+  );
+  background-size: 300% 300%;
+  animation: gradient-shift 3s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  @apply text-transparent px-2;
 }
 
 .text-shimmer-effect {

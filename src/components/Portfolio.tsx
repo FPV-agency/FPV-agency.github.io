@@ -33,6 +33,18 @@ const items = [
   ...originalTemplates.slice(0, 3)
 ];
 
+const FirstLetterLarger: React.FC<{ text: string }> = ({ text }) => {
+  if (!text) return null;
+  const first = text.charAt(0);
+  const rest = text.slice(1);
+  return (
+    <>
+      <span className="text-[1.25em] leading-none inline-block">{first}</span>
+      {rest}
+    </>
+  );
+};
+
 export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
   const [currentIndex, setCurrentIndex] = useState(2); // Start so dot 1 shows 6,1,2
   const [activeCardId, setActiveCardId] = useState<number | null>(null);
@@ -218,16 +230,40 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
           >
             {t('portfolio-title')}
           </motion.h2>
-          <motion.p 
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-gray-400 text-lg max-w-2xl mx-auto"
+            className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed"
           >
-            {t('portfolio-subtitle-part1')}
-            <span className="gradient-text font-semibold">{t('portfolio-subtitle-gradient')}</span>
-          </motion.p>
+            <div className="whitespace-pre-line">
+              {t('portfolio-subtitle-start')}
+              <span 
+                onClick={() => setShowAll(true)}
+                className="inline-block relative group cursor-pointer align-bottom"
+              >
+                <span className="group-hover:opacity-0 transition-opacity duration-300 gradient-text-pink-orange font-bold">
+                  {t('portfolio-subtitle-mix')}
+                </span>
+                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-neon-blue text-[10px] font-black uppercase tracking-widest drop-shadow-[0_0_8px_rgba(41,207,222,0.8)] whitespace-nowrap">
+                  <FirstLetterLarger text={t('portfolio-detail-hover')} />
+                </span>
+              </span>
+              {t('portfolio-subtitle-mid')}
+              <span 
+                onClick={() => setShowAll(true)}
+                className="inline-block relative group cursor-pointer align-bottom"
+              >
+                <span className="group-hover:opacity-0 transition-opacity duration-300 gradient-text-blue-purple font-bold">
+                  {t('portfolio-subtitle-end')}
+                </span>
+                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-neon-blue text-[10px] font-black uppercase tracking-widest drop-shadow-[0_0_8px_rgba(41,207,222,0.8)] whitespace-nowrap">
+                  <FirstLetterLarger text={t('portfolio-detail-hover')} />
+                </span>
+              </span>
+            </div>
+          </motion.div>
         </div>
 
         {/* Carousel Container */}
@@ -267,17 +303,20 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
                       
                       <div className="flex justify-between items-center mb-4">
                         <span className="px-3 py-1 bg-neon-blue/10 text-neon-blue rounded-full text-xs font-bold uppercase tracking-wider">
-                          {t(template.tag)}
+                          <FirstLetterLarger text={template.label} />
                         </span>
                         <span className="text-2xl font-bold gradient-text whitespace-nowrap">{renderPrice(template.price)}</span>
                       </div>
                       
                       <h3 className="text-xl font-bold mb-2 group-hover:text-neon-blue transition-colors">
-                        {t(`template${template.id}-title`) || template.title}
+                        {template.title}
                       </h3>
-                      <p className="text-gray-400 mb-8 text-sm italic">
-                        {t(`template${template.id}-desc`) || template.desc}
-                      </p>
+                      <div className="relative overflow-hidden h-[2.6rem] mb-8">
+                        <div className="float-right w-1/2 h-[1.3rem] pointer-events-none" />
+                        <p className="text-gray-400 text-sm italic leading-[1.3rem]">
+                          {t(`template${template.id}-desc`) || template.desc}
+                        </p>
+                      </div>
                       
                       <div className="flex gap-4">
                         <button className="flex-1 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-colors text-sm font-semibold">
@@ -360,11 +399,18 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
                         <span className="text-5xl">{template.emoji}</span>
                       </div>
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-bold text-neon-blue uppercase">{t(template.tag)}</span>
+                        <span className="text-xs font-bold text-neon-blue uppercase">
+                          <FirstLetterLarger text={template.label} />
+                        </span>
                         <span className="font-bold">{renderPrice(template.price)}</span>
                       </div>
-                      <h4 className="font-bold text-lg mb-2">{t(`template${template.id}-title`) || template.title}</h4>
-                      <p className="text-gray-400 text-xs mb-4">{t(`template${template.id}-desc`) || template.desc}</p>
+                      <h4 className="font-bold text-lg mb-2">{template.title}</h4>
+                      <div className="relative overflow-hidden h-[2.5rem] mb-4">
+                        <div className="float-right w-1/2 h-[1.25rem] pointer-events-none" />
+                        <p className="text-gray-400 text-xs leading-[1.25rem]">
+                          {t(`template${template.id}-desc`) || template.desc}
+                        </p>
+                      </div>
                       <button className="w-full btn-primary py-2 rounded-xl text-sm font-bold">{t('portfolio-details-btn')}</button>
                     </div>
                   ))}

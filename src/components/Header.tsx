@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 import { Language } from '../i18n/translations';
 import { Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
   lang: Language;
@@ -17,7 +18,7 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
     { id: 'portfolio', label: t('nav-portfolio') },
     { id: 'services', label: t('nav-services') },
     { id: 'process', label: t('nav-process') },
-    { id: 'testimonials', label: t('nav-testimonials') },
+    { id: 'ratings', label: t('nav-testimonials') },
   ];
 
   return (
@@ -91,9 +92,9 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
             </div>
           </div>
 
-          <button className="btn-primary px-6 py-2 rounded-full font-semibold text-sm">
+          <a href="#order" className="btn-primary px-6 py-2 rounded-full font-semibold text-sm flex items-center justify-center">
             {t('quote-btn')}
-          </button>
+          </a>
 
           {/* Scroll Progress Ring */}
           <div className="relative w-10 h-10 ml-2">
@@ -127,9 +128,29 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="xl:hidden absolute top-full left-0 w-full bg-dark-bg border-b border-white/10 p-6 space-y-6 animate-in fade-in slide-in-from-top-4 flex flex-col items-end">
-          {navItems.map((item) => (
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            {/* Overlay to catch clicks outside and provide a backdrop for mobile */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="xl:hidden fixed inset-0 z-[-1] bg-black/20 backdrop-blur-sm" 
+              onClick={() => setIsMenuOpen(false)}
+              onPan={() => setIsMenuOpen(false)}
+              aria-hidden="true"
+            />
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="xl:hidden absolute top-full left-0 w-full bg-dark-bg border-b border-white/10 p-6 space-y-6 flex flex-col items-end"
+              onMouseLeave={() => setIsMenuOpen(false)}
+            >
+              {navItems.map((item) => (
+
             <a
               key={item.id}
               href={`#${item.id}`}
@@ -147,10 +168,15 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
               <div className={`px-4 py-1 rounded-full text-xs font-bold transition ${lang === 'ua' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}>UA</div>
               <div className={`px-4 py-1 rounded-full text-xs font-bold transition ${lang === 'en' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}>EN</div>
             </div>
-            <button className="btn-primary px-6 py-2 rounded-full text-xs font-bold">{t('quote-btn')}</button>
+            <a href="#order" onClick={() => setIsMenuOpen(false)} className="btn-primary px-6 py-2 rounded-full text-xs font-bold flex items-center justify-center">
+              {t('quote-btn')}
+            </a>
           </div>
-        </div>
-      )}
+        </motion.div>
+      </>
+    )}
+  </AnimatePresence>
     </header>
+
   );
 };
