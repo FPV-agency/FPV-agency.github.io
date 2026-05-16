@@ -1,12 +1,16 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useRef } from 'react';
+import { motion, useInView } from 'motion/react';
 import { Zap, Search, Smartphone, BarChart3 } from 'lucide-react';
 
 interface ServicesProps {
   t: (key: string) => string;
+  onConceptClick?: () => void;
 }
 
-export const Services: React.FC<ServicesProps> = ({ t }) => {
+export const Services: React.FC<ServicesProps> = ({ t, onConceptClick }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { amount: 0.1 });
+  
   const items = [
     { icon: < Zap className="text-neon-blue" />, title: t('service1-title'), desc: t('service1-desc'), delay: 0 },
     { icon: < Search className="text-neon-violet" />, title: t('service2-title'), desc: t('service2-desc'), delay: 0.1 },
@@ -14,11 +18,22 @@ export const Services: React.FC<ServicesProps> = ({ t }) => {
     { icon: < BarChart3 className="text-neon-orange" />, title: t('service4-title'), desc: t('service4-desc'), delay: 0.3 },
   ];
 
+  const handleConceptClick = () => {
+    document.getElementById('footer')?.scrollIntoView({ behavior: 'smooth' });
+    if (onConceptClick) onConceptClick();
+  };
+
   return (
-    <section id="services" className="py-20 px-4 border-t border-white/5 scroll-mt-[var(--header-height)]">
+    <section ref={ref} id="services" className={`py-20 px-4 border-t border-white/5 scroll-mt-[var(--header-height)] ${!isInView ? 'pause-animations' : ''}`}>
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4 gradient-text">{t('services-title')}</h2>
+          <button
+            onClick={handleConceptClick}
+            className="text-xl md:text-2xl font-medium gradient-text-blue-purple cursor-pointer transition-all hover:drop-shadow-[0_0_15px_rgba(41,207,222,0.8)] hover:scale-105 active:scale-95 whitespace-pre-line leading-tight block mx-auto max-w-xl"
+          >
+            {t('services-concept-title')}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">

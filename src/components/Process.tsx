@@ -1,11 +1,14 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useRef } from 'react';
+import { motion, useInView } from 'motion/react';
 
 interface ProcessProps {
   t: (key: string) => string;
 }
 
 export const Process: React.FC<ProcessProps> = ({ t }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { amount: 0.1 });
+
   const steps = [
     { title: t('process-step1'), desc: t('process-step1-desc'), num: "#1" },
     { title: t('process-step2'), desc: t('process-step2-desc'), num: "#2" },
@@ -14,7 +17,7 @@ export const Process: React.FC<ProcessProps> = ({ t }) => {
   ];
 
   return (
-    <section id="process" className="py-24 px-4 bg-dark-card border-t border-white/5 scroll-mt-[var(--header-height)]">
+    <section ref={ref} id="process" className={`py-24 px-4 bg-dark-card border-t border-white/5 scroll-mt-[var(--header-height)] ${!isInView ? 'pause-animations' : ''}`}>
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <motion.h2 
@@ -49,15 +52,15 @@ export const Process: React.FC<ProcessProps> = ({ t }) => {
                 style={{ animationDelay: `${i * 3}s` }}
                 className={`bg-white/5 backdrop-blur-sm rounded-3xl p-12 hover:bg-dark-bg transition-all group relative overflow-hidden min-h-[280px] flex flex-col justify-center cursor-default shadow-lg shadow-black/20 group-hover/process:animate-none ${
                   isEven 
-                    ? 'border-l-2 border-white/10 hover:border-l-neon-blue/60 process-card-pulse-left' 
-                    : 'border-r-2 border-white/10 hover:border-r-neon-blue/60 process-card-pulse-right'
+                    ? 'border-l-2 border-white/10 hover:border-l-neon-blue/60' 
+                    : 'border-r-2 border-white/10 hover:border-r-neon-blue/60'
                 }`}
               >
                 {/* Background Number - Starting exactly from middle line */}
                 <div className="absolute left-1/2 top-0 bottom-0 flex items-center pointer-events-none z-0">
                   <span 
                     style={{ animationDelay: `${i * 3}s` }}
-                    className="text-[160px] font-black leading-none select-none process-number-pulse gradient-step-num group-hover:opacity-100 group-hover:animate-none transition-all duration-500 group-hover/process:animate-none"
+                    className="text-[160px] font-black leading-none select-none gradient-step-num group-hover:opacity-100 group-hover:animate-none transition-all duration-500 group-hover/process:animate-none"
                   >
                     {step.num}
                   </span>

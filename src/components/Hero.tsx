@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useRef } from 'react';
+import { motion, useInView } from 'motion/react';
 
 import { Language } from '../i18n/translations';
 
@@ -21,9 +21,12 @@ const FirstLetterLarger: React.FC<{ text: string }> = ({ text }) => {
 };
 
 export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { amount: 0.1 });
+
   return (
-    <section id="hero" className="pt-28 pb-20 sm:pt-40 px-4 relative overflow-hidden">
-      <div className="absolute top-20 left-10 w-72 h-72 bg-neon-blue rounded-full mix-blend-multiply filter blur-[100px] opacity-10 animate-pulse"></div>
+    <section ref={ref} id="hero" className={`pt-28 pb-20 sm:pt-40 px-4 relative overflow-hidden ${!isInView ? 'pause-animations' : ''}`}>
+      <div className="absolute top-20 left-10 w-96 h-96 bg-neon-blue/5 rounded-full filter blur-[120px]"></div>
       <div className="container mx-auto text-center relative z-10">
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}

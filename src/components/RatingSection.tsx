@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useInView } from 'motion/react';
 import { Star, MessageSquare, Send } from 'lucide-react';
 
 interface RatingSectionProps {
@@ -36,6 +36,8 @@ const FirstLetterLarger: React.FC<{ text: string }> = ({ text }) => {
 };
 
 export const RatingSection: React.FC<RatingSectionProps> = ({ t }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { amount: 0.1 });
   const [rating, setRating] = useState<number>(0);
   const [hover, setHover] = useState<number>(0);
   const [feedback, setFeedback] = useState('');
@@ -57,10 +59,10 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t }) => {
   const countChars = formattedCount.split('');
 
   return (
-    <section id="ratings" className="py-32 relative overflow-hidden">
+    <section ref={ref} id="ratings" className={`py-32 relative overflow-hidden ${!isInView ? 'pause-animations' : ''}`}>
       {/* Background Decorative Elements */}
-      <div className="absolute top-1/2 left-0 w-96 h-96 bg-neon-blue/10 blur-[120px] rounded-full -translate-x-1/2" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-neon-violet/10 blur-[150px] rounded-full translate-x-1/4" />
+      <div className="absolute top-1/2 left-0 w-full h-full bg-neon-blue/5 blur-[160px] rounded-full -translate-x-1/2 opacity-50" />
+      <div className="absolute bottom-0 right-0 w-full h-full bg-neon-violet/5 blur-[180px] rounded-full translate-x-1/4 opacity-50" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center mb-16">

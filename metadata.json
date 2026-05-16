@@ -2,5 +2,5 @@
   "name": "FPV | the Future Pages Vibe",
   "description": "High-Converting Landing Pages for the Future",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

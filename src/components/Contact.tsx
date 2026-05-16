@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useInView } from 'motion/react';
 import { Send } from 'lucide-react';
 
 interface ContactProps {
@@ -7,11 +7,50 @@ interface ContactProps {
 }
 
 export const Contact: React.FC<ContactProps> = ({ t }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { amount: 0.1 });
   const [contactValue, setContactValue] = useState('');
   const [promoValue, setPromoValue] = useState('');
+  const [nameValue, setNameValue] = useState('');
+  const [descValue, setDescValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [selectedType, setSelectedType] = useState<'consultation' | 'order' | 'cooperation'>('order');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: nameValue,
+          contact: contactValue,
+          type: selectedType,
+          promo: promoValue,
+          message: descValue
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to send');
+      
+      setSubmitStatus('success');
+      setNameValue('');
+      setContactValue('');
+      setPromoValue('');
+      setDescValue('');
+    } catch (error) {
+      console.error('Submission error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -34,7 +73,7 @@ export const Contact: React.FC<ContactProps> = ({ t }) => {
   };
 
   return (
-    <section id="contact" className="py-20 px-4 bg-dark-card/50 relative">
+    <section ref={ref} id="contact" className={`py-20 px-4 bg-dark-card/50 relative ${!isInView ? 'pause-animations' : ''}`}>
       {/* Navigation Anchors */}
       <div id="order" className="absolute -top-32" />
       <div id="consultation" className="absolute -top-32" />
@@ -50,13 +89,15 @@ export const Contact: React.FC<ContactProps> = ({ t }) => {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           className="bg-dark-bg/80 backdrop-blur-xl rounded-[2rem] p-8 md:p-12 border border-white/5 shadow-2xl shadow-neon-blue/5"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={handleSubmit}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-400 ml-1">{t('contact-name-label')}</label>
               <input 
                 type="text" 
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
                 placeholder={t('contact-name-placeholder')}
                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-neon-blue transition-colors"
                 required
@@ -227,6 +268,8 @@ export const Contact: React.FC<ContactProps> = ({ t }) => {
                 </div>
 
                 <textarea 
+                  value={descValue}
+                  onChange={(e) => setDescValue(e.target.value)}
                   placeholder={t('contact-desc-placeholder')}
                   rows={8}
                   className="w-full h-full bg-transparent px-8 py-8 outline-none border-none transition-colors resize-none relative z-10 text-white placeholder:text-gray-600"
@@ -238,15 +281,30 @@ export const Contact: React.FC<ContactProps> = ({ t }) => {
                 <div className="absolute bottom-[-10px] right-0 w-[45%] h-[28%] flex items-end justify-end p-2">
                   <button 
                     type="submit"
-                    disabled={!contactValue.trim()}
+                    disabled={isSubmitting || !contactValue.trim() || !nameValue.trim()}
                     className="w-full h-16 btn-primary rounded-2xl font-bold flex items-center justify-center gap-3 shadow-2xl shadow-neon-blue/20 hover:scale-[1.03] active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed group/btn"
                   >
-                    <span className="text-lg">{t('submit-btn')}</span>
-                    <Send size={20} className="group-hover/btn:translate-x-1 transition-transform" />
+                    <span className="text-lg">
+                      {isSubmitting ? (t('contact-name-label').includes('П') ? 'Відправка...' : 'Sending...') : t('submit-btn')}
+                    </span>
+                    <Send size={20} className={`${isSubmitting ? 'animate-pulse' : 'group-hover/btn:translate-x-1'} transition-transform`} />
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="mt-8 text-center h-6">
+            {submitStatus === 'success' && (
+              <p className="text-green-400 font-medium">
+                {t('contact-name-label').includes('П') ? 'Повідомлення успішно відправлено!' : 'Message sent successfully!'}
+              </p>
+            )}
+            {submitStatus === 'error' && (
+              <p className="text-red-400 font-medium">
+                {t('contact-name-label').includes('П') ? 'Помилка при відправці. Спробуйте пізніше.' : 'Error sending message. Try again later.'}
+              </p>
+            )}
           </div>
 
           <p className="text-center text-gray-600 text-xs mt-12">

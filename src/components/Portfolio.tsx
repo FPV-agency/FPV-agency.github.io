@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useInView } from 'motion/react';
 import { ArrowRight, X } from 'lucide-react';
 
 interface Template {
@@ -57,6 +57,8 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
   const autoPlayTimer = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
   const isMobile = useRef(false);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { amount: 0.1 });
 
   useEffect(() => {
     isMobile.current = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -143,7 +145,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
 
   // Auto-play timer
   useEffect(() => {
-    if (!isPaused && activeCardId === null && forcedActiveId === null) {
+    if (!isPaused && activeCardId === null && forcedActiveId === null && isInView) {
       autoPlayTimer.current = setInterval(nextSlide, 5000);
     } else {
       if (autoPlayTimer.current) clearInterval(autoPlayTimer.current);
@@ -151,7 +153,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
     return () => {
       if (autoPlayTimer.current) clearInterval(autoPlayTimer.current);
     };
-  }, [isPaused, activeCardId, forcedActiveId, nextSlide]);
+  }, [isPaused, activeCardId, forcedActiveId, nextSlide, isInView]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -219,7 +221,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
   };
 
   return (
-    <section id="portfolio" className="py-12 px-4 bg-dark-card/50 relative overflow-visible z-10 scroll-mt-[var(--header-height)]">
+    <section ref={ref} id="portfolio" className={`py-12 px-4 bg-dark-card/50 relative overflow-visible z-10 scroll-mt-[var(--header-height)] ${!isInView ? 'pause-animations' : ''}`}>
       <div className="container mx-auto">
         <div className="text-center mb-0">
           <motion.h2 
