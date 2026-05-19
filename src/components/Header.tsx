@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 import { Language } from '../i18n/translations';
 import { Menu, X, ScanSearch } from 'lucide-react';
@@ -8,12 +8,60 @@ interface HeaderProps {
   lang: Language;
   setLang: (lang: Language) => void;
   t: (key: string) => string;
+  onSearch?: (query: string) => void;
+  activeSection?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
+export const Header: React.FC<HeaderProps> = ({ lang, setLang, t, onSearch, activeSection }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchInputValue, setSearchInputValue] = useState('');
+  const [flashTrigger, setFlashTrigger] = useState(0);
   const scrollProgress = useScrollProgress();
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchInputValue.trim() && onSearch) {
+      onSearch(searchInputValue.trim());
+      setIsSearchOpen(false);
+      setSearchInputValue('');
+    }
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getConicGradient = (progress: number) => {
+    const degree = progress * 3.6;
+    return `conic-gradient(
+      #29CFDE 0deg,
+      #5F4BA1 ${Math.min(90, degree)}deg,
+      #CE477B ${Math.min(180, degree)}deg,
+      #E5805C ${Math.min(270, degree)}deg,
+      #29CFDE ${Math.min(360, degree)}deg,
+      transparent ${Math.min(360, degree)}deg,
+      transparent 360deg
+    )`;
+  };
+
+  useEffect(() => {
+    if (scrollProgress === 0 || isSearchOpen) {
+      // Small reset to make sure it triggers
+      const initialTimeout = setTimeout(() => {
+        setFlashTrigger(v => v + 1);
+      }, 2000);
+
+      const interval = setInterval(() => {
+        setFlashTrigger(v => v + 1);
+      }, 20000);
+
+      return () => {
+        clearTimeout(initialTimeout);
+        clearInterval(interval);
+      };
+    }
+  }, [scrollProgress === 0, isSearchOpen]);
 
   const navItems = [
     { id: 'portfolio', label: t('nav-portfolio') },
@@ -24,10 +72,13 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
   ];
 
   return (
-    <header 
+    <div 
+      className="fixed w-full z-50 group/header"
       onMouseLeave={() => setIsSearchOpen(false)}
-      className="fixed w-full z-50 glassmorphism h-[var(--header-height)]"
     >
+      <header 
+        className="w-full glassmorphism h-[var(--header-height)] relative"
+      >
       <div className="container mx-auto h-full px-4 flex justify-end items-center relative">
         {/* Logo - Always hanging on the left */}
         <a href="#" className={`hanging-logo-wrapper transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
@@ -46,32 +97,39 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
               {scrollProgress === 0 || isSearchOpen ? (
                 <motion.button
                   key="search-btn-mobile"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ 
-                    opacity: 1, 
-                    scale: 1,
-                    filter: [
-                      "drop-shadow(0 0 0px transparent)",
-                      "drop-shadow(0 0 15px #29cfde)",
-                      "drop-shadow(0 0 2px #29cfde)",
-                      "drop-shadow(0 0 15px #29cfde)",
-                      "drop-shadow(0 0 0px transparent)"
-                    ]
+                  initial={{ opacity: 0, scale: 1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1 }}
+                  onClick={() => {
+                    if (isSearchOpen && searchInputValue.trim()) {
+                      handleSearchSubmit();
+                    } else {
+                      setIsSearchOpen(!isSearchOpen);
+                    }
                   }}
-                  transition={{
-                    opacity: { duration: 0.3 },
-                    scale: { duration: 0.3 },
-                    filter: { delay: 1, duration: 1.2, times: [0, 0.2, 0.4, 0.6, 1] }
-                  }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="p-3 transition-opacity hover:opacity-80 z-20 group relative text-white"
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
                 >
-                  <ScanSearch 
-                    size={32} 
-                    strokeWidth={2.5} 
-                    className="transition-transform group-hover:scale-110"
-                  />
+                  <motion.div
+                    key={`blink-mobile-${flashTrigger}`}
+                    animate={{ 
+                      filter: [
+                        "drop-shadow(0 0 0px #29cfde00)",
+                        "drop-shadow(0 0 15px #29cfde)",
+                        "drop-shadow(0 0 2px #29cfde)",
+                        "drop-shadow(0 0 15px #29cfde)",
+                        "drop-shadow(0 0 0px #29cfde00)"
+                      ]
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      times: [0, 0.25, 0.5, 0.75, 1]
+                    }}
+                  >
+                    <ScanSearch 
+                      size={32} 
+                      strokeWidth={2.5} 
+                      className="transition-transform group-hover:scale-110"
+                    />
+                  </motion.div>
                 </motion.button>
               ) : (
                 <motion.div
@@ -79,32 +137,14 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="w-12 h-12 cursor-pointer relative"
-                  onClick={() => setIsSearchOpen(true)}
+                  className="scroll-indicator-mobile"
+                  onClick={scrollToTop}
                 >
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      cx="24"
-                      cy="24"
-                      r="20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      className="text-white/10"
-                    />
-                    <circle
-                      cx="24"
-                      cy="24"
-                      r="20"
-                      fill="none"
-                      stroke="var(--color-neon-blue)"
-                      strokeWidth="3"
-                      strokeDasharray="125.6"
-                      strokeDashoffset={125.6 - (125.6 * scrollProgress) / 100}
-                      className="transition-all duration-300"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                  <div 
+                    className="scroll-ring-mobile" 
+                    style={{ background: getConicGradient(scrollProgress) }}
+                  />
+                  <div className="scroll-percentage-mobile">
                     {Math.round(scrollProgress)}%
                   </div>
                 </motion.div>
@@ -120,14 +160,16 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
                   exit={{ width: 0, opacity: 0, x: -10 }}
                   className="absolute right-full mr-2 z-30"
                 >
-                  <div className="bg-gray-950/95 backdrop-blur-2xl border border-white/20 rounded-full px-6 py-3 flex items-center shadow-2xl">
+                  <form onSubmit={handleSearchSubmit} className="bg-gray-950/95 backdrop-blur-2xl border border-white/20 rounded-full px-6 py-3 flex items-center shadow-2xl">
                     <input
                       type="text"
+                      value={searchInputValue}
+                      onChange={(e) => setSearchInputValue(e.target.value)}
                       placeholder={t('search-placeholder')}
                       className="w-full bg-transparent border-none text-white text-base outline-none placeholder:text-gray-500"
                       autoFocus
                     />
-                  </div>
+                  </form>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -141,7 +183,11 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
         <nav className="hidden xl:flex items-center gap-8 w-max">
           <div className={`flex items-center gap-8 transition-all duration-500 ${isSearchOpen ? 'w-0 opacity-0 pointer-events-none overflow-hidden' : 'w-max opacity-100'}`}>
             {navItems.map((item) => (
-              <a key={item.id} href={`#${item.id}`} className="nav-link">
+              <a 
+                key={item.id} 
+                href={`#${item.id}`} 
+                className={`nav-link ${activeSection === item.id ? 'active' : ''}`}
+              >
                 {item.label}
               </a>
             ))}
@@ -157,76 +203,78 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
                   exit={{ width: 0, opacity: 0, x: 20 }}
                   className="mr-4 overflow-hidden"
                 >
-                  <div className="bg-gray-950/90 backdrop-blur-2xl border border-white/20 rounded-full px-6 py-3 flex items-center shadow-[0_0_30px_rgba(0,0,0,0.6)]">
+                  <form onSubmit={handleSearchSubmit} className="bg-gray-950/90 backdrop-blur-2xl border border-white/20 rounded-full px-6 py-3 flex items-center shadow-[0_0_30px_rgba(0,0,0,0.6)]">
                     <input
                       type="text"
+                      value={searchInputValue}
+                      onChange={(e) => setSearchInputValue(e.target.value)}
                       placeholder={t('search-placeholder')}
                       className="w-full bg-transparent border-none text-white text-base outline-none placeholder:text-gray-500"
                       autoFocus
                     />
-                  </div>
+                  </form>
                 </motion.div>
               )}
             </AnimatePresence>
 
             <AnimatePresence mode="wait">
-              <motion.button
-                key={isSearchOpen ? 'search-active' : 'search-idle'}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ 
-                  opacity: 1, 
-                  scale: 1,
-                  filter: [
-                    "drop-shadow(0 0 0px transparent)",
-                    "drop-shadow(0 0 20px #29cfde)",
-                    "drop-shadow(0 0 4px #29cfde)",
-                    "drop-shadow(0 0 20px #29cfde)",
-                    "drop-shadow(0 0 0px transparent)"
-                  ]
-                }}
-                transition={{
-                  opacity: { duration: 0.3 },
-                  scale: { duration: 0.3 },
-                  filter: { delay: 1.2, duration: 1.5, times: [0, 0.2, 0.4, 0.6, 1] }
-                }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="p-3 transition-opacity hover:opacity-80 cursor-pointer z-20 group relative text-white flex items-center justify-center"
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-              >
-                <ScanSearch 
-                  size={36} 
-                  strokeWidth={2.5} 
-                  className="transition-transform group-hover:scale-110"
-                />
-                
-                {/* Progress Ring integrated into the button when search is closed */}
-                {!isSearchOpen && scrollProgress > 0 && (
-                  <div className="absolute inset-0 scale-[1.15]">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle
-                        cx="30"
-                        cy="30"
-                        r="26"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="text-white/5"
-                      />
-                      <circle
-                        cx="30"
-                        cy="30"
-                        r="26"
-                        fill="none"
-                        stroke="var(--color-neon-blue)"
-                        strokeWidth="2"
-                        strokeDasharray="163.3"
-                        strokeDashoffset={163.3 - (163.3 * scrollProgress) / 100}
-                        className="transition-all duration-300 opacity-60"
-                      />
-                    </svg>
+              {scrollProgress === 0 || isSearchOpen ? (
+                <motion.button
+                  key="search-btn-desktop"
+                  initial={{ opacity: 0, scale: 1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1 }}
+                  className="p-3 transition-opacity hover:opacity-80 cursor-pointer z-20 group relative text-white flex items-center justify-center"
+                  onClick={() => {
+                    if (isSearchOpen && searchInputValue.trim()) {
+                      handleSearchSubmit();
+                    } else {
+                      setIsSearchOpen(!isSearchOpen);
+                    }
+                  }}
+                >
+                  <motion.div
+                    key={`blink-desktop-${flashTrigger}`}
+                    animate={{ 
+                      filter: [
+                        "drop-shadow(0 0 0px #29cfde00)",
+                        "drop-shadow(0 0 20px #29cfde)",
+                        "drop-shadow(0 0 5px #29cfde)",
+                        "drop-shadow(0 0 20px #29cfde)",
+                        "drop-shadow(0 0 0px #29cfde00)"
+                      ]
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      times: [0, 0.25, 0.5, 0.75, 1]
+                    }}
+                    className="flex items-center justify-center"
+                  >
+                    <ScanSearch 
+                      size={36} 
+                      strokeWidth={2.5} 
+                      className="transition-transform group-hover:scale-110"
+                    />
+                  </motion.div>
+                </motion.button>
+              ) : (
+                <motion.div
+                  key="progress-ring-desktop"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="scroll-indicator"
+                  onClick={scrollToTop}
+                >
+                  <div 
+                    className="scroll-ring" 
+                    style={{ background: getConicGradient(scrollProgress) }}
+                  />
+                  <div className="scroll-percentage">
+                    {Math.round(scrollProgress)}%
                   </div>
-                )}
-              </motion.button>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
 
@@ -278,16 +326,15 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
               onMouseLeave={() => setIsMenuOpen(false)}
             >
               {navItems.map((item) => (
-
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              className="text-lg font-bold text-gray-300 hover:text-white transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item.label}
-            </a>
-          ))}
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`text-lg font-bold transition-colors ${activeSection === item.id ? 'text-neon-blue' : 'text-gray-300 hover:text-white'}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.label}
+                </a>
+              ))}
           <div className="w-full flex justify-between items-center pt-6 border-t border-white/10">
             <div 
               className="flex bg-gray-900 rounded-full p-1 cursor-pointer select-none"
@@ -304,7 +351,12 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t }) => {
       </>
     )}
   </AnimatePresence>
-    </header>
+      </header>
 
+      {/* Invisible buffer zone to keep search open until mouse is 2x header height away */}
+      {isSearchOpen && (
+        <div className="h-[var(--header-height)] w-full pointer-events-auto cursor-default" />
+      )}
+    </div>
   );
 };

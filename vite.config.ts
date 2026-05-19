@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       // Очищаем папку перед каждой сборкой
       emptyOutDir: true,
-      // Принудительно выключаем карты кода, чтобы убрать eval
+      // Выключаем сорсмапы для фронтенда, чтобы убрать eval
       sourcemap: false,
     }
   };

@@ -4,6 +4,7 @@ import { Star, MessageSquare, Send } from 'lucide-react';
 
 interface RatingSectionProps {
   t: (key: string) => string;
+  onAddFeedbackToContact?: (text: string) => void;
 }
 
 const Digit: React.FC<{ value: string }> = ({ value }) => (
@@ -35,24 +36,84 @@ const FirstLetterLarger: React.FC<{ text: string }> = ({ text }) => {
   );
 };
 
-export const RatingSection: React.FC<RatingSectionProps> = ({ t }) => {
+export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackToContact }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { amount: 0.1 });
   const [rating, setRating] = useState<number>(0);
   const [hover, setHover] = useState<number>(0);
   const [feedback, setFeedback] = useState('');
-  const baseCount = 6286;
-  const [displayCount, setDisplayCount] = useState(baseCount);
+  const [addContacts, setAddContacts] = useState(false);
+  const initialBaseCount = 6286;
+  const [displayCount, setDisplayCount] = useState(initialBaseCount);
 
   const ratings = [1, 2, 3, 4, 5, 6];
 
   useEffect(() => {
-    if (rating > 0) {
-      setDisplayCount(baseCount + 1);
-    } else {
-      setDisplayCount(baseCount);
+    // Load persisted state
+    const savedRating = localStorage.getItem('fpv-user-rating');
+    const savedCount = localStorage.getItem('fpv-total-ratings');
+    
+    if (savedRating) {
+      setRating(parseInt(savedRating));
     }
-  }, [rating]);
+    
+    if (savedCount) {
+      setDisplayCount(parseInt(savedCount));
+    } else {
+      localStorage.setItem('fpv-total-ratings', initialBaseCount.toString());
+    }
+  }, []);
+
+  const handleRatingSelect = (star: number) => {
+    const newRating = rating === star ? 0 : star;
+    
+    // Update display count logic
+    let newCount = displayCount;
+    if (rating === 0 && newRating > 0) {
+      // Just rated
+      newCount = displayCount + 1;
+    } else if (rating > 0 && newRating === 0) {
+      // Un-rated
+      newCount = Math.max(initialBaseCount, displayCount - 1);
+    }
+    
+    setRating(newRating);
+    setDisplayCount(newCount);
+    
+    // Persist immediately
+    localStorage.setItem('fpv-user-rating', newRating.toString());
+    localStorage.setItem('fpv-total-ratings', newCount.toString());
+  };
+
+  const handleRatingSubmit = () => {
+    if (rating === 0) return;
+    
+    if (onAddFeedbackToContact && feedback.trim()) {
+      onAddFeedbackToContact(feedback);
+    }
+    
+    alert(t('nav-portfolio').includes('По') ? 'Дякуємо за Вашу оцінку!' : 'Thank you for your rating!');
+  };
+
+  const handleFeedbackTransfer = () => {
+    if (onAddFeedbackToContact && feedback.trim()) {
+      onAddFeedbackToContact(feedback);
+    }
+  };
+
+  const renderPlaceholder = () => {
+    const text = t('rating-feedback-placeholder');
+    const parts = text.split(/(анонімні|anonymous)/gi);
+    return (
+      <div className="absolute top-8 left-8 pointer-events-none text-gray-600 text-lg leading-relaxed">
+        {parts.map((part, i) => 
+          (part.toLowerCase() === 'анонімні' || part.toLowerCase() === 'anonymous')
+          ? <u key={i} className="decoration-neon-blue decoration-2 underline-offset-4">{part}</u> 
+          : part
+        )}
+      </div>
+    );
+  };
 
   // Format with thousands separator: e.g. "6.286"
   const formattedCount = displayCount.toLocaleString('de-DE'); 
@@ -125,7 +186,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t }) => {
 
             <div className="space-y-4">
               <p className="text-sm font-bold uppercase tracking-widest text-gray-400 text-right">
-                <FirstLetterLarger text="Ваша оцінка" />
+                <FirstLetterLarger text={t('rating-your-label')} />
               </p>
               <div 
                 className={`flex justify-between items-center bg-black/40 px-6 py-10 rounded-[32px] transition-all duration-500 shadow-inner border-2 ${
@@ -144,7 +205,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t }) => {
                 {ratings.map((star) => (
                   <button
                     key={star}
-                    onClick={() => setRating(rating === star ? 0 : star)}
+                    onClick={() => handleRatingSelect(star)}
                     onMouseEnter={() => setHover(star)}
                     className="relative group transition-transform active:scale-95"
                   >
@@ -189,18 +250,49 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t }) => {
               <div className="bg-neon-violet/20 p-3 rounded-2xl">
                 <MessageSquare className="text-neon-violet" size={24} />
               </div>
-              <h3 className="text-2xl font-bold gradient-text-blue-purple">Залишити відгук</h3>
+              <h3 className="text-2xl font-bold gradient-text-blue-purple">{t('rating-feedback-title')}</h3>
             </div>
 
             <div className="relative flex-grow">
+              {!feedback && renderPlaceholder()}
               <textarea
+                id="rating-feedback"
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
-                placeholder={t('rating-feedback-placeholder')}
-                className="w-full h-full min-h-[200px] bg-black/40 border border-white/5 rounded-3xl p-8 text-white placeholder:text-gray-600 focus:outline-none focus:border-neon-violet/50 transition-colors resize-none text-lg"
+                className="w-full h-full min-h-[200px] bg-black/40 border border-white/5 rounded-3xl p-8 text-white focus:outline-none focus:border-neon-violet/50 transition-colors resize-none text-lg relative z-0"
               />
-              <div className="absolute bottom-6 right-6">
-                 <button 
+              <div className="absolute bottom-6 right-6 flex flex-col md:flex-row items-center gap-6">
+                <div 
+                  className="flex items-center gap-3 transition-all duration-300 group cursor-pointer select-none"
+                  onClick={() => {
+                    const newVal = !addContacts;
+                    setAddContacts(newVal);
+                    if (newVal) handleFeedbackTransfer();
+                  }}
+                >
+                  <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all duration-300 ${
+                    addContacts 
+                    ? 'border-neon-blue bg-neon-blue/20 shadow-[0_0_15px_rgba(41,207,222,0.4)]' 
+                    : 'border-white/20 group-hover:border-neon-blue/40'
+                  }`}>
+                    {addContacts && (
+                      <motion.div 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-2 h-2 bg-neon-blue"
+                      />
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${
+                    addContacts ? 'text-neon-blue' : 'text-gray-500 group-hover:text-gray-300'
+                  }`}>
+                    {t('nav-portfolio').includes('По') ? 'додати контакти' : 'add contacts'}
+                  </span>
+                </div>
+
+                <button 
+                  id="rating-submit"
+                  onClick={handleRatingSubmit}
                   className={`flex items-center gap-3 px-10 py-5 rounded-2xl font-bold hover:scale-105 active:scale-95 transition-all group disabled:opacity-50 ${
                     rating > 0 
                       ? 'bg-neon-blue text-white shadow-[0_0_25px_rgba(41,207,222,0.6)]' 

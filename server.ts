@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import compression from "compression";
 
 dotenv.config();
 
@@ -9,14 +10,20 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.use(compression());
   app.use(express.json());
 
   // API Route for Web3Forms
   app.post("/api/contact", async (req, res) => {
     const { name, contact, type, promo, message } = req.body;
     const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
+    const isDev = process.env.NODE_ENV !== "production";
 
     if (!accessKey) {
+      if (isDev) {
+        console.warn("WEB3FORMS_ACCESS_KEY is missing. In DEV mode, returning mock success.");
+        return res.json({ success: true, warning: "Mock success (key missing)" });
+      }
       console.error("Web3Forms Access Key missing");
       return res.status(500).json({ error: "Server configuration error" });
     }
