@@ -10,7 +10,13 @@ import { Contact } from './components/Contact';
 import { translations, Language } from './i18n/translations';
 
 export default function App() {
-  const [lang, setLang] = useState<Language>('ua');
+  const [lang, setLang] = useState<Language>(() => {
+    const userLang = (navigator.language || (navigator as any).userLanguage)?.toLowerCase() || '';
+    if (userLang.startsWith('uk') || userLang.startsWith('ru') || userLang.startsWith('be')) {
+      return 'ua';
+    }
+    return 'en';
+  });
   const [highlightedFooterItem, setHighlightedFooterItem] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [feedbackTransfer, setFeedbackTransfer] = useState<{ text: string; category: string } | null>(null);
