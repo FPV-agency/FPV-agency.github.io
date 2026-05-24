@@ -410,7 +410,7 @@ export const Contact: React.FC<ContactProps> = ({
 
       // 2. Если мы на GitHub Pages или локальный прокси выдал ошибку/недоступен, отправляем НАПРЯМУЮ в Google Apps Script
       if (!success) {
-        const gasUrl = "https://script.google.com/macros/s/AKfycbx_pOmnP8fG3fuhQx4R6X3Z9tc_H_jykufPZCUaR82Fx4ruqy04nYMWxvk5_xj-UvS2/exec";
+        const gasUrl = (import.meta as any).env?.VITE_GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxRIGGNjIjSyNFcUr7cw93ZqMFmedpHy5c1GvvN2c84bdYFhdERbZfEXXUjJGFqKu2Y/exec";
         
         // Для отправки напрямую в Google Apps Script из браузера без проблем с CORS,
         // мы используем 'no-cors' режим. Это выполнит запрос на стороне Google, но скроет от браузера opaque-ответ.
