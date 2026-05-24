@@ -13,49 +13,39 @@ async function startServer() {
   app.use(compression());
   app.use(express.json());
 
-  // API Route for Web3Forms
+  // API Route for Google Apps Script Web App (Website -> GAS -> Telegram)
   app.post("/api/contact", async (req, res) => {
     const { name, contact, type, promo, message } = req.body;
-    const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
-    const isDev = process.env.NODE_ENV !== "production";
-
-    if (!accessKey) {
-      if (isDev) {
-        console.warn("WEB3FORMS_ACCESS_KEY is missing. In DEV mode, returning mock success.");
-        return res.json({ success: true, warning: "Mock success (key missing)" });
-      }
-      console.error("Web3Forms Access Key missing");
-      return res.status(500).json({ error: "Server configuration error" });
-    }
+    const gasUrl = process.env.GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbx_pOmnP8fG3fuhQx4R6X3Z9tc_H_jykufPZCUaR82Fx4ruqy04nYMWxvk5_xj-UvS2/exec";
 
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
+      const response = await fetch(gasUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          access_key: accessKey,
-          from_name: "Future Pages Vibe",
-          subject: `New Request: ${type}`,
-          name: name,
-          contact_info: contact,
-          request_type: type,
-          promo_code: promo || 'None',
-          message: message,
+          name: name || "",
+          contact: contact || "",
+          type: type || "",
+          promo: promo || "Нет",
+          message: message || ""
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`Google Apps Script responded with status ${response.status}`);
+      }
+
       const result = await response.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Failed to submit form');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit to Google Apps Script');
       }
 
       res.json({ success: true });
     } catch (error) {
-      console.error("Web3Forms API Error:", error);
+      console.error("GAS Form Submission Error:", error);
       res.status(500).json({ error: "Failed to send message" });
     }
   });

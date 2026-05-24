@@ -16,6 +16,8 @@ export default function App() {
   const [feedbackTransfer, setFeedbackTransfer] = useState<{ text: string; category: string } | null>(null);
   const [scheduleRequested, setScheduleRequested] = useState<boolean>(false);
   const [exchangeRequested, setExchangeRequested] = useState<boolean>(false);
+  const [conceptRequested, setConceptRequested] = useState<boolean>(false);
+  const [interactionRequested, setInteractionRequested] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('');
 
   useEffect(() => {
@@ -87,6 +89,22 @@ export default function App() {
     }
   };
 
+  const handleConceptRequest = () => {
+    setConceptRequested(true);
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleInteractionRequest = () => {
+    setInteractionRequested(true);
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   // Translation helper function
   const t = useCallback((key: string) => {
     return (translations[lang] as any)[key] || key;
@@ -110,30 +128,37 @@ export default function App() {
         )}
       </button>
       {/* Popup Window */}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-64 opacity-0 invisible group-hover/footer-item:opacity-100 group-hover/footer-item:visible transition-all duration-300 translate-y-2 group-hover/footer-item:translate-y-0 z-50">
-        <div className="bg-gray-900 border border-white/10 p-6 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-xl">
+      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 pb-4 w-64 transition-all duration-300 z-50 ${
+        highlightedId === link.id 
+          ? 'opacity-100 visible translate-y-0' 
+          : 'opacity-0 invisible translate-y-2 group-hover/footer-item:opacity-100 group-hover/footer-item:visible group-hover/footer-item:translate-y-0'
+      }`}>
+        <div className="bg-gray-900 border border-white/10 p-6 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-xl relative">
           <h4 className={`font-bold mb-2 text-base gradient-text-blue-purple ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
             {link.title || link.label}
           </h4>
           <div className={`text-white text-xs leading-relaxed whitespace-pre-line ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
             {link.content}
           </div>
-          <div className={`mt-4 pt-4 border-t border-white/5 flex ${link.id === 'schedule' || link.id === 'exchange' ? 'justify-center' : 'justify-start'}`}>
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
-                if (onDetailClick) {
-                  onDetailClick();
-                }
-              }}
-              className="text-neon-blue text-[10px] font-bold uppercase tracking-widest hover:underline cursor-pointer"
-            >
-              {lang === 'ua' ? 'Детальніше' : 'Details'} →
-            </button>
-          </div>
+          {onDetailClick && (
+            <div className={`mt-4 pt-4 border-t border-white/5 flex ${link.id === 'schedule' || link.id === 'exchange' ? 'justify-center' : 'justify-start'}`}>
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (onDetailClick) {
+                    onDetailClick();
+                  }
+                }}
+                className="text-neon-blue text-[10px] font-bold uppercase tracking-widest hover:underline cursor-pointer"
+              >
+                {lang === 'ua' ? 'Детальніше' : 'Details'} →
+              </button>
+            </div>
+          )}
+          {/* Triangle Arrow */}
+          <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-r border-b border-white/10 rotate-45" />
         </div>
-        {/* Triangle Arrow */}
-        <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-r border-b border-white/10 rotate-45" />
       </div>
     </div>
   );
@@ -163,10 +188,15 @@ export default function App() {
           t={t} 
           searchQuery={searchQuery} 
           feedbackData={feedbackTransfer}
+          clearFeedbackRequest={() => setFeedbackTransfer(null)}
           isScheduleRequested={scheduleRequested}
           clearScheduleRequest={() => setScheduleRequested(false)}
           isExchangeRequested={exchangeRequested}
           clearExchangeRequest={() => setExchangeRequested(false)}
+          isConceptRequested={conceptRequested}
+          clearConceptRequest={() => setConceptRequested(false)}
+          isInteractionRequested={interactionRequested}
+          clearInteractionRequest={() => setInteractionRequested(false)}
           onScheduleClick={() => {
             highlightFooterItem('schedule');
             const scheduleLink = document.getElementById('footer-schedule-link');
@@ -192,6 +222,10 @@ export default function App() {
                   key={link.id} 
                   link={link} 
                   highlightedId={highlightedFooterItem} 
+                  onDetailClick={
+                    link.id === 'concept' ? handleConceptRequest : 
+                    link.id === 'interaction' ? handleInteractionRequest : undefined
+                  }
                 />
               ))}
             </div>

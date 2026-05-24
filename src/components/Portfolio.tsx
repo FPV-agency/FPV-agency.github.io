@@ -237,30 +237,53 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed"
+            className="text-gray-400 text-lg max-w-3xl mx-auto leading-relaxed"
           >
-            <div className="whitespace-pre-line">
-              {t('portfolio-subtitle-start')}
+            <div className="whitespace-pre-line text-center">
+              <span className="text-gray-200 font-medium">
+                {t('portfolio-subtitle-start')}
+              </span>
+              {"\n"}
+              <span className="text-gray-400 font-medium">
+                {t('portfolio-subtitle-order')}
+              </span>
               <span 
                 onClick={() => setShowAll(true)}
-                className="inline-block relative group cursor-pointer align-bottom"
+                className="inline-block relative group cursor-pointer align-middle mx-1.5 py-0.5 px-3 rounded-full border border-neon-pink/20 hover:border-neon-pink/60 bg-white/[0.02] hover:bg-neon-pink/5 shadow-[0_0_10px_rgba(206,71,123,0.12)] hover:shadow-[0_0_16px_rgba(206,71,123,0.35)] transition-all duration-300 select-none"
               >
                 <span className="group-hover:opacity-0 transition-opacity duration-300 gradient-text-pink-orange font-bold">
                   {t('portfolio-subtitle-mix')}
                 </span>
-                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-neon-blue text-[10px] font-black uppercase tracking-widest drop-shadow-[0_0_8px_rgba(41,207,222,0.8)] whitespace-nowrap">
+                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-neon-pink text-xs font-black uppercase tracking-wider whitespace-nowrap">
                   <FirstLetterLarger text={t('portfolio-detail-hover')} />
                 </span>
               </span>
-              {t('portfolio-subtitle-mid')}
+              <span className="text-gray-400 font-medium">
+                {t('portfolio-subtitle-divider')}
+              </span>
               <span 
                 onClick={() => setShowAll(true)}
-                className="inline-block relative group cursor-pointer align-bottom"
+                className="inline-block relative group cursor-pointer align-middle mx-1.5 py-0.5 px-3 rounded-full border border-neon-blue/20 hover:border-neon-blue/60 bg-white/[0.02] hover:bg-neon-blue/5 shadow-[0_0_10px_rgba(41,207,222,0.12)] hover:shadow-[0_0_16px_rgba(41,207,222,0.35)] transition-all duration-300 select-none"
               >
                 <span className="group-hover:opacity-0 transition-opacity duration-300 gradient-text-blue-purple font-bold">
+                  {t('portfolio-subtitle-premium')}
+                </span>
+                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-neon-blue text-xs font-black uppercase tracking-wider whitespace-nowrap">
+                  <FirstLetterLarger text={t('portfolio-detail-hover')} />
+                </span>
+              </span>
+              {"\n"}
+              <span className="text-gray-400 font-medium">
+                {t('portfolio-subtitle-or')}
+              </span>
+              <span 
+                onClick={() => setShowAll(true)}
+                className="inline-block relative group cursor-pointer align-middle mx-1.5 py-0.5 px-3 rounded-full border border-neon-violet/20 hover:border-neon-violet/60 bg-white/[0.02] hover:bg-neon-violet/5 shadow-[0_0_10px_rgba(168,85,247,0.12)] hover:shadow-[0_0_16px_rgba(168,85,247,0.35)] transition-all duration-300 select-none"
+              >
+                <span className="group-hover:opacity-0 transition-opacity duration-300 gradient-text font-extrabold">
                   {t('portfolio-subtitle-end')}
                 </span>
-                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-neon-blue text-[10px] font-black uppercase tracking-widest drop-shadow-[0_0_8px_rgba(41,207,222,0.8)] whitespace-nowrap">
+                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[#a855f7] text-xs font-black uppercase tracking-wider whitespace-nowrap">
                   <FirstLetterLarger text={t('portfolio-detail-hover')} />
                 </span>
               </span>

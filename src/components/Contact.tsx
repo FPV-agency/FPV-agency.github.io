@@ -1,16 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'motion/react';
 import { Send } from 'lucide-react';
+import { publicOfferTextUa, publicOfferTextEn } from '../data/publicOffer';
 
 interface ContactProps {
   t: (key: string) => string;
   searchQuery?: string | null;
   onScheduleClick?: () => void;
   feedbackData?: { text: string; category: string } | null;
+  clearFeedbackRequest?: () => void;
   isScheduleRequested?: boolean;
   clearScheduleRequest?: () => void;
   isExchangeRequested?: boolean;
   clearExchangeRequest?: () => void;
+  isConceptRequested?: boolean;
+  clearConceptRequest?: () => void;
+  isInteractionRequested?: boolean;
+  clearInteractionRequest?: () => void;
 }
 
 export const Contact: React.FC<ContactProps> = ({ 
@@ -18,10 +24,15 @@ export const Contact: React.FC<ContactProps> = ({
   searchQuery, 
   onScheduleClick, 
   feedbackData,
+  clearFeedbackRequest,
   isScheduleRequested,
   clearScheduleRequest,
   isExchangeRequested,
-  clearExchangeRequest
+  clearExchangeRequest,
+  isConceptRequested,
+  clearConceptRequest,
+  isInteractionRequested,
+  clearInteractionRequest
 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { amount: 0.1 });
@@ -31,13 +42,133 @@ export const Contact: React.FC<ContactProps> = ({
   const [descValue, setDescValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [selectedType, setSelectedType] = useState<'consultation' | 'order' | 'cooperation' | 'feedback' | 'schedule' | 'exchange'>('consultation');
+  const [selectedType, setSelectedType] = useState<'consultation' | 'order' | 'cooperation' | 'feedback' | 'schedule' | 'exchange' | 'concept' | 'interaction'>('consultation');
   const [isFeedbackAvailable, setIsFeedbackAvailable] = useState(false);
   const [isScheduleAvailable, setIsScheduleAvailable] = useState(false);
   const [isExchangeAvailable, setIsExchangeAvailable] = useState(false);
+  const [isConceptAvailable, setIsConceptAvailable] = useState(false);
+  const [isInteractionAvailable, setIsInteractionAvailable] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const startYRef = useRef(0);
+  const startScrollTopRef = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const [scrollStats, setScrollStats] = useState({
+    clientHeight: 0,
+    scrollHeight: 0,
+    scrollTop: 0
+  });
+
+  const updateScrollStats = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      setScrollStats({
+        clientHeight: textarea.clientHeight,
+        scrollHeight: textarea.scrollHeight,
+        scrollTop: textarea.scrollTop
+      });
+    }
+  };
+
+  useEffect(() => {
+    updateScrollStats();
+  }, [descValue]);
+
+  useEffect(() => {
+    const timer = setTimeout(updateScrollStats, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleThumbPointerDown = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    isDraggingRef.current = true;
+    startYRef.current = clientY;
+    
+    if (textareaRef.current) {
+      startScrollTopRef.current = textareaRef.current.scrollTop;
+    }
+    
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    const handlePointerMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDraggingRef.current) return;
+      
+      const textarea = textareaRef.current;
+      const track = trackRef.current;
+      if (!textarea || !track) return;
+
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      const deltaY = clientY - startYRef.current;
+
+      const T = track.clientHeight;
+      const scrollH = textarea.scrollHeight;
+      const clientH = textarea.clientHeight;
+      
+      const thumbRatio = Math.max(clientH / scrollH, 0.15);
+      const H = T * thumbRatio;
+      
+      const maxTrackScroll = T - H;
+      const maxContentScroll = scrollH - clientH;
+
+      if (maxTrackScroll <= 0) return;
+
+      const scrollAmount = deltaY * (maxContentScroll / maxTrackScroll);
+      let newScrollTop = startScrollTopRef.current + scrollAmount;
+      
+      newScrollTop = Math.max(0, Math.min(maxContentScroll, newScrollTop));
+      
+      textarea.scrollTop = newScrollTop;
+      setScrollStats({
+        clientHeight: clientH,
+        scrollHeight: scrollH,
+        scrollTop: newScrollTop
+      });
+    };
+
+    const handlePointerUp = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+      }
+    };
+
+    window.addEventListener('mousemove', handlePointerMove, { passive: false });
+    window.addEventListener('mouseup', handlePointerUp);
+    window.addEventListener('touchmove', handlePointerMove, { passive: false });
+    window.addEventListener('touchend', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseup', handlePointerUp);
+      window.removeEventListener('touchmove', handlePointerMove);
+      window.removeEventListener('touchend', handlePointerUp);
+    };
+  }, []);
+
+  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const track = trackRef.current;
+    const textarea = textareaRef.current;
+    if (track && textarea) {
+      const rect = track.getBoundingClientRect();
+      const clickY = e.clientY - rect.top;
+      const clickRatio = Math.max(0, Math.min(1, clickY / rect.height));
+      
+      const newScrollTop = clickRatio * (textarea.scrollHeight - textarea.clientHeight);
+      textarea.scrollTop = newScrollTop;
+      setScrollStats((prev) => ({ ...prev, scrollTop: newScrollTop }));
+    }
+  };
 
   useEffect(() => {
     if (searchQuery) {
@@ -52,8 +183,13 @@ export const Contact: React.FC<ContactProps> = ({
       setDescValue(feedbackData.text);
       setSelectedType('feedback');
       setIsFeedbackAvailable(true);
+      setIsScheduleAvailable(false);
+      setIsExchangeAvailable(false);
+      setIsConceptAvailable(false);
+      setIsInteractionAvailable(false);
+      if (clearFeedbackRequest) clearFeedbackRequest();
     }
-  }, [feedbackData]);
+  }, [feedbackData, clearFeedbackRequest]);
 
   useEffect(() => {
     if (isScheduleRequested) {
@@ -63,6 +199,10 @@ export const Contact: React.FC<ContactProps> = ({
       );
       setSelectedType('schedule');
       setIsScheduleAvailable(true);
+      setIsFeedbackAvailable(false);
+      setIsExchangeAvailable(false);
+      setIsConceptAvailable(false);
+      setIsInteractionAvailable(false);
       if (clearScheduleRequest) clearScheduleRequest();
     }
   }, [isScheduleRequested, clearScheduleRequest, t]);
@@ -75,9 +215,73 @@ export const Contact: React.FC<ContactProps> = ({
       );
       setSelectedType('exchange');
       setIsExchangeAvailable(true);
+      setIsFeedbackAvailable(false);
+      setIsScheduleAvailable(false);
+      setIsConceptAvailable(false);
+      setIsInteractionAvailable(false);
       if (clearExchangeRequest) clearExchangeRequest();
     }
   }, [isExchangeRequested, clearExchangeRequest, t]);
+
+  useEffect(() => {
+    if (isConceptRequested) {
+      setDescValue(t('nav-portfolio').includes('По')
+        ? `Публічна частина:
+
+1) Ми поважаємо Вас і поважаємо Себе;
+
+2) Взявся - роби до кінця. І намагайся робити як для себе;
+
+3) Дивитись і бачити, слухати і чути - на перший погляд виглядають однаково... Так само й із почуттям гумору та розумінням;
+
+4) Є товар, є ціна, а є сервіс. Якщо воно Вам дорого, або не підходить то походьте по ринку, попитайте в людей поради і беріть те що Вам краще (торгова політика);
+
+5) Є 1, є 2, є 3! Якщо тобі потрібно саме 2, а тобі пропонують 1-1,5 або 2,5-3... Ну то воно ж не тойво - не годиться (відповідність заявленим умовам);
+
+6) Якщо людина шарить у темі, виконує поставлені задачі та дотримується термінів то хіба важливо як саме і коли вона це робить? Може в неї саме зараз «хвилина релаксації/концентрації», або улюблена кішка рожає... Буде мати часом - передзонить/відпишеться (пріорітети, умови праці/співпраці);
+
+
+7) |... (маємо місце для Ваших концептів/ідей/пропозицій, можливо вони взаєні);`
+        : `Public part:
+
+1) We respect You and we respect Ourselves;
+
+2) If you started - do it to the end. And try to do it as if it were for yourself;
+
+3) To look and to see, to listen and to hear - at first glance look the same... The same goes for a sense of humor and understanding;
+
+4) There is a product, there is a price, and there is also a service. If it is expensive for You, or doesn't suit you, then shop around, ask people for advice and take what is better for You (trade policy);
+
+5) There is 1, there is 2, there is 3! If you need exactly 2, and you are offered 1-1.5 or 2.5-3... Well, it is not it - it doesn't fit (compliance with the declared conditions);
+
+6) If a person is knowledgeable in the field, performs the assigned tasks and meets deadlines, then does it really matter how exactly and when they do it? Maybe they have a "minute of relaxation/concentration" right now, or their favorite cat is giving birth... When they have time - they will call back/reply (priorities, terms of work/cooperation);
+
+
+7) |... (we have space for Your concepts/ideas/suggestions, perhaps they are mutual);`
+      );
+      setSelectedType('concept');
+      setIsConceptAvailable(true);
+      setIsFeedbackAvailable(false);
+      setIsScheduleAvailable(false);
+      setIsExchangeAvailable(false);
+      setIsInteractionAvailable(false);
+      if (clearConceptRequest) clearConceptRequest();
+    }
+  }, [isConceptRequested, clearConceptRequest, t]);
+
+  useEffect(() => {
+    if (isInteractionRequested) {
+      const isUa = t('nav-portfolio').includes('По');
+      setDescValue(isUa ? publicOfferTextUa : publicOfferTextEn);
+      setSelectedType('interaction');
+      setIsInteractionAvailable(true);
+      setIsFeedbackAvailable(false);
+      setIsScheduleAvailable(false);
+      setIsExchangeAvailable(false);
+      setIsConceptAvailable(false);
+      if (clearInteractionRequest) clearInteractionRequest();
+    }
+  }, [isInteractionRequested, clearInteractionRequest, t]);
 
   const triggerBlink = () => {
     setIsBlinking(true);
@@ -87,11 +291,19 @@ export const Contact: React.FC<ContactProps> = ({
   const handleTypeChange = (type: typeof selectedType) => {
     if (type === selectedType) return;
     
-    // Disappear temporary items logic
+    // Disappear other additional items immediately
     if (['consultation', 'order', 'cooperation'].includes(type)) {
-      if (selectedType === 'feedback') setIsFeedbackAvailable(false);
-      if (selectedType === 'schedule') setIsScheduleAvailable(false);
-      if (selectedType === 'exchange') setIsExchangeAvailable(false);
+      setIsFeedbackAvailable(false);
+      setIsScheduleAvailable(false);
+      setIsExchangeAvailable(false);
+      setIsConceptAvailable(false);
+      setIsInteractionAvailable(false);
+    } else if (['feedback', 'schedule', 'exchange', 'concept', 'interaction'].includes(type)) {
+      setIsFeedbackAvailable(type === 'feedback');
+      setIsScheduleAvailable(type === 'schedule');
+      setIsExchangeAvailable(type === 'exchange');
+      setIsConceptAvailable(type === 'concept');
+      setIsInteractionAvailable(type === 'interaction');
     }
 
     setSelectedType(type);
@@ -109,8 +321,46 @@ export const Contact: React.FC<ContactProps> = ({
         ? "Іноді нам доводиться залучати до розробки проектів представників більш розвинутих цивілізацій - розрахунки із ними ведуться у межгалактичній валюті:\n1 Blemflarck = 1,20 UAH"
         : "Sometimes we have to involve representatives of more advanced civilizations in project development - settlements with them are carried out in intergalactic currency:\n1 Blemflarck = 1.20 UAH"
       );
+    } else if (type === 'concept') {
+      setDescValue(t('nav-portfolio').includes('По')
+        ? `Публічна частина:
+
+1) Ми поважаємо Вас і поважаємо Себе;
+
+2) Взявся - роби до кінця. І намагайся робити як для себе;
+
+3) Дивитись і бачити, слухати і чути - на перший погляд виглядають однаково... Так само й із почуттям гумору та розумінням;
+
+4) Є товар, є ціна, а є сервіс. Якщо воно Вам дорого, або не підходить то походьте по ринку, попитайте в людей поради і беріть те що Вам краще (торгова політика);
+
+5) Є 1, є 2, є 3! Якщо тобі потрібно саме 2, а тобі пропонують 1-1,5 або 2,5-3... Ну то воно ж не тойво - не годиться (відповідність заявленим умовам);
+
+6) Якщо людина шарить у темі, виконує поставлені задачі та дотримується термінів то хіба важливо як саме і коли вона це робить? Може в неї саме зараз «хвилина релаксації/концентрації», або улюблена кішка рожає... Буде мати час - передзонить/відпишеться (пріорітети, умови праці/співпраці);
+
+
+7) |... (маємо місце для Ваших концептів/ідей/пропозицій, можливо вони взаєні);`
+        : `Public part:
+
+1) We respect You and we respect Ourselves;
+
+2) If you started - do it to the end. And try to do it as if it were for yourself;
+
+3) To look and to see, to listen and to hear - at first glance look the same... The same goes for a sense of humor and understanding;
+
+4) There is a product, there is a price, and there is also a service. If it is expensive for You, or doesn't suit you, then shop around, ask people for advice and take what is better for You (trade policy);
+
+5) There is 1, there is 2, there is 3! If you need exactly 2, and you are offered 1-1.5 or 2.5-3... Well, it is not it - it doesn't fit (compliance with the declared conditions);
+
+6) If a person is knowledgeable in the field, performs the assigned tasks and meets deadlines, then does it really matter how exactly and when they do it? Maybe they have a "minute of relaxation/concentration" right now, or their favorite cat is giving birth... When they have time - they will call back/reply (priorities, terms of work/cooperation);
+
+
+7) |... (we have space for Your concepts/ideas/suggestions, perhaps they are mutual);`
+      );
+    } else if (type === 'interaction') {
+      const isUa = t('nav-portfolio').includes('По');
+      setDescValue(isUa ? publicOfferTextUa : publicOfferTextEn);
     } else if (type === 'order' && searchQuery) {
-      setDescValue(`Що до Вашого запиту "${searchQuery}":\n\n- Тількі вчора було... Бігаємо по складах не можемо знайти, але на балансі наче є.\n\nЗалиште будь ласка Ваші контактні данні та натисніть відправити,\n\nа ми ще добре пошукаємо, або запитаємо в наших надійних партнерів і обов'язково надішлемо Вам комерційну пропозицію найближчим часом (спама не буде - обіцяємо).`);
+      setDescValue(`Що до Вашого запиту "${searchQuery}":\n\n- Тількі вчора було... Бігаємо по складах не можемо знайти, але на балансі наче є.\n\nЗалиште будь ласка Ваші контактні данні та натисніть відправити,\n\nа ми ще добре пошукаємо, або запитаємо в наших надійних партнеів і обов'язково надішлемо Вам комерційну пропозицію найближчим часом (спама не буде - обіцяємо).`);
     } else {
       setDescValue('');
     }
@@ -127,26 +377,65 @@ export const Contact: React.FC<ContactProps> = ({
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
-    try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: nameValue,
-          contact: contactValue,
-          type: selectedType,
-          promo: promoValue,
-          message: descValue
-        })
-      });
+    const payload = {
+      name: nameValue,
+      contact: contactValue,
+      type: selectedType,
+      promo: promoValue || "Нет",
+      message: descValue
+    };
 
-      if (!response.ok) throw new Error('Failed to send');
-      
-      setSubmitStatus('success');
-      setNameValue('');
-      setContactValue('');
-      setPromoValue('');
-      setDescValue('');
+    try {
+      let success = false;
+      const isStaticHosting = window.location.hostname.includes('github.io') || 
+                             window.location.hostname.includes('github.preview') ||
+                             window.location.hash.includes('force-direct');
+
+      // 1. Попытка отправить через бэкенд прокси, если мы НЕ на статическом хостинге (например, GitHub Pages)
+      if (!isStaticHosting) {
+        try {
+          const response = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (response.ok) {
+            success = true;
+          }
+        } catch (err) {
+          console.warn('Локальный API прокси недоступен, пробуем отправить напрямую в Google Apps Script...', err);
+        }
+      }
+
+      // 2. Если мы на GitHub Pages или локальный прокси выдал ошибку/недоступен, отправляем НАПРЯМУЮ в Google Apps Script
+      if (!success) {
+        const gasUrl = "https://script.google.com/macros/s/AKfycbx_pOmnP8fG3fuhQx4R6X3Z9tc_H_jykufPZCUaR82Fx4ruqy04nYMWxvk5_xj-UvS2/exec";
+        
+        // Для отправки напрямую в Google Apps Script из браузера без проблем с CORS,
+        // мы используем 'no-cors' режим. Это выполнит запрос на стороне Google, но скроет от браузера opaque-ответ.
+        await fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        // В режиме no-cors ответ непрозрачный, но так как запрос ушёл без ошибок сети, мы считаем отправку успешной
+        success = true;
+      }
+
+      if (success) {
+        setSubmitStatus('success');
+        setNameValue('');
+        setContactValue('');
+        setPromoValue('');
+        setDescValue('');
+      } else {
+        throw new Error('Form submission failed both via proxy and direct routes');
+      }
     } catch (error) {
       console.error('Submission error:', error);
       setSubmitStatus('error');
@@ -169,6 +458,8 @@ export const Contact: React.FC<ContactProps> = ({
   }, []);
 
   const showInteractiveEffects = !isFocused && !promoValue;
+
+  const { clientHeight, scrollHeight, scrollTop } = scrollStats;
 
   const handleInteraction = () => {
     const input = document.querySelector('input[maxLength="6"]') as HTMLInputElement;
@@ -297,8 +588,8 @@ export const Contact: React.FC<ContactProps> = ({
                   ))}
                 </div>
 
-                {/* Secondary Row: Feedback / Schedule / Exchange */}
-                {(isFeedbackAvailable || isScheduleAvailable || isExchangeAvailable) && (
+                {/* Secondary Row: Feedback / Schedule / Exchange / Concept / Public Offer */}
+                {(isFeedbackAvailable || isScheduleAvailable || isExchangeAvailable || isConceptAvailable || isInteractionAvailable) && (
                   <div className="flex flex-wrap items-center gap-x-12 gap-y-5 md:ml-[calc(1.25rem+8.5rem)]">
                     {isFeedbackAvailable && (
                       <button
@@ -378,6 +669,58 @@ export const Contact: React.FC<ContactProps> = ({
                         </span>
                       </button>
                     )}
+                    {isConceptAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => handleTypeChange('concept')}
+                        className="flex items-center gap-3 group cursor-pointer whitespace-nowrap"
+                      >
+                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${
+                          selectedType === 'concept' 
+                          ? 'border-neon-blue bg-neon-blue/20 shadow-[0_0_10px_rgba(41,207,222,0.3)]' 
+                          : 'border-white/20 group-hover:border-neon-blue/40'
+                        }`}>
+                          {selectedType === 'concept' && (
+                            <motion.div 
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="w-2 h-2 bg-neon-blue rounded-sm"
+                            />
+                          )}
+                        </div>
+                        <span className={`text-sm font-medium transition-colors ${
+                          selectedType === 'concept' ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'
+                        }`}>
+                          {t('contact-opt-concept')}
+                        </span>
+                      </button>
+                    )}
+                    {isInteractionAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => handleTypeChange('interaction')}
+                        className="flex items-center gap-3 group cursor-pointer whitespace-nowrap"
+                      >
+                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${
+                          selectedType === 'interaction' 
+                          ? 'border-neon-blue bg-neon-blue/20 shadow-[0_0_10px_rgba(41,207,222,0.3)]' 
+                          : 'border-white/20 group-hover:border-neon-blue/40'
+                        }`}>
+                          {selectedType === 'interaction' && (
+                            <motion.div 
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="w-2 h-2 bg-neon-blue rounded-sm"
+                            />
+                          )}
+                        </div>
+                        <span className={`text-sm font-medium transition-colors ${
+                          selectedType === 'interaction' ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'
+                        }`}>
+                          {t('contact-opt-interaction')}
+                        </span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -452,13 +795,40 @@ export const Contact: React.FC<ContactProps> = ({
                 <div className="absolute inset-0 z-0 bg-gray-900/50 border border-white/10 group-focus-within/textarea:border-neon-blue/50 rounded-[2rem] transition-all duration-300" />
                 
                 <textarea 
+                  ref={textareaRef}
+                  onScroll={updateScrollStats}
                   id="contact-description"
                   value={descValue}
                   onChange={(e) => setDescValue(e.target.value)}
                   placeholder={t('contact-desc-placeholder')}
                   rows={12}
-                  className="w-full h-full bg-transparent px-8 py-8 outline-none border-none transition-colors resize-none relative z-10 text-white placeholder:text-gray-600 font-medium leading-relaxed custom-scrollbar"
+                  className="w-full h-full bg-transparent px-8 py-8 outline-none border-none transition-colors resize-none relative z-10 text-white placeholder:text-gray-600 font-medium leading-relaxed no-scrollbar"
                 ></textarea>
+
+                {/* Custom glowing neon scrollbar: shorter at the bottom (25%) so it doesn't overlap the submit button */}
+                {scrollHeight > clientHeight && clientHeight > 0 && (
+                  <div 
+                    ref={trackRef}
+                    onClick={handleTrackClick}
+                    className="absolute right-4 top-[10%] bottom-[25%] w-[6px] bg-white/5 hover:bg-white/10 rounded-full z-20 cursor-pointer transition-all"
+                  >
+                    <div 
+                      onMouseDown={handleThumbPointerDown}
+                      onTouchStart={handleThumbPointerDown}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`absolute right-0 w-[6px] rounded-full bg-gradient-to-b from-neon-blue via-neon-violet to-neon-pink transition-all ${
+                        isDragging 
+                        ? 'shadow-[0_0_15px_rgba(41,207,222,1)] scale-x-125 select-none' 
+                        : 'shadow-[0_0_8px_rgba(41,207,222,0.6)] hover:shadow-[0_0_12px_rgba(41,207,222,0.9)]'
+                      }`}
+                      style={{
+                        height: `${Math.max((clientHeight / scrollHeight) * 100, 15)}%`,
+                        top: `${(scrollTop / (scrollHeight - clientHeight)) * (100 - Math.max((clientHeight / scrollHeight) * 100, 15))}%`,
+                        cursor: isDragging ? 'grabbing' : 'grab'
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Submit Button - Positioned absolutely at bottom right with some spacing */}
                 <div className="absolute bottom-4 right-4 w-[40%] flex items-end justify-end z-20">

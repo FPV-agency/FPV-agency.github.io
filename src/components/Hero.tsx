@@ -28,6 +28,11 @@ export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
     <section ref={ref} id="hero" className={`pt-28 pb-20 sm:pt-40 px-4 relative overflow-hidden ${!isInView ? 'pause-animations' : ''}`}>
       <div className="absolute top-20 left-10 w-96 h-96 bg-neon-blue/5 rounded-full filter blur-[120px]"></div>
       <div className="container mx-auto text-center relative z-10">
+      <h1 className="visually-hidden">
+  {lang === 'ua' 
+    ? "Створення високоефективних Landing Page: розробка сайтів та UI/UX дизайн від FPV Agency" 
+    : "High-converting Landing Page Development: professional web design services by FPV Agency"}
+</h1>
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -61,18 +66,26 @@ export const Hero: React.FC<HeroProps> = ({ t, lang }) => {
         </motion.p>
 
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="flex flex-col sm:flex-row justify-center gap-6"
-        >
-          <a href="#portfolio" className="btn-primary px-10 py-4 rounded-full text-lg font-bold shadow-lg shadow-neon-blue/20 hover:scale-105 transition-transform btn-shimmer-effect">
-            {t('hero-portfolio-btn')}
-          </a>
-          <a href="#consultation" className="px-10 py-4 rounded-full text-lg font-bold border border-neon-blue text-neon-blue hover:bg-neon-blue/10 transition-colors">
-            {t('hero-consultation-btn')}
-          </a>
-        </motion.div>
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8, delay: 0.4 }}
+  className="flex flex-col sm:flex-row justify-center gap-6"
+>
+  <a 
+    href="#portfolio" 
+    aria-label="Переглянути портфоліо FPV Agency: кейси з розробки Landing Page"
+    className="btn-primary px-10 py-4 rounded-full text-lg font-bold shadow-lg shadow-neon-blue/20 hover:scale-105 transition-transform btn-shimmer-effect"
+  >
+    {t('hero-portfolio-btn')}
+  </a>
+  <a 
+    href="#consultation" 
+    aria-label="Замовити безкоштовну консультацію з розробки та маркетингу сайту у FPV Agency"
+    className="px-10 py-4 rounded-full text-lg font-bold border border-neon-blue text-neon-blue hover:bg-neon-blue/10 transition-colors"
+  >
+    {t('hero-consultation-btn')}
+  </a>
+</motion.div>
 
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           {[
