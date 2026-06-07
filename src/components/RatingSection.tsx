@@ -102,37 +102,15 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
     };
 
     try {
-      let success = false;
-      const isStaticHosting = window.location.hostname.includes('github.io') || 
-                             window.location.hostname.includes('github.preview') ||
-                             window.location.hash.includes('force-direct');
-
-      if (!isStaticHosting) {
-        try {
-          const response = await fetch('/api/contact', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (response.ok) {
-            success = true;
-          }
-        } catch (err) {
-          console.warn('API proxy error:', err);
-        }
-      }
-
-      if (!success) {
-        const gasUrl = "https://script.google.com/macros/s/AKfycbxRIGGNjIjSyNFcUr7cw93ZqMFmedpHy5c1GvvN2c84bdYFhdERbZfEXXUjJGFqKu2Y/exec";
-        await fetch(gasUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
-          body: JSON.stringify(payload)
-        });
-      }
+      const gasUrl = (import.meta as any).env?.VITE_GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxRIGGNjIjSyNFcUr7cw93ZqMFmedpHy5c1GvvN2c84bdYFhdERbZfEXXUjJGFqKu2Y/exec";
+      await fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(payload)
+      });
     } catch (e) {
       console.error("Failed to submit rating to bot:", e);
     }

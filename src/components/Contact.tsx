@@ -732,45 +732,20 @@ everything will be super, we promise!`
 
     try {
       let success = false;
-      const isStaticHosting = window.location.hostname.includes('github.io') || 
-                             window.location.hostname.includes('github.preview') ||
-                             window.location.hash.includes('force-direct');
-
-      // 1. Попытка отправить через бэкенд прокси, если мы НЕ на статическом хостинге (например, GitHub Pages)
-      if (!isStaticHosting) {
-        try {
-          const response = await fetch('/api/contact', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          
-          if (response.ok) {
-            success = true;
-          }
-        } catch (err) {
-          console.warn('Локальный API прокси недоступен, пробуем отправить напрямую в Google Apps Script...', err);
-        }
-      }
-
-      // 2. Если мы на GitHub Pages или локальный прокси выдал ошибку/недоступен, отправляем НАПРЯМУЮ в Google Apps Script
-      if (!success) {
-        const gasUrl = (import.meta as any).env?.VITE_GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxRIGGNjIjSyNFcUr7cw93ZqMFmedpHy5c1GvvN2c84bdYFhdERbZfEXXUjJGFqKu2Y/exec";
-        
-        // Для отправки напрямую в Google Apps Script из браузера без проблем с CORS,
-        // мы используем 'no-cors' режим. Это выполнит запрос на стороне Google, но скроет от браузера opaque-ответ.
-        await fetch(gasUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
-          body: JSON.stringify(payload)
-        });
-        
-        // В режиме no-cors ответ непрозрачный, но так как запрос ушёл без ошибок сети, мы считаем отправку успешной
-        success = true;
-      }
+      const gasUrl = (import.meta as any).env?.VITE_GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxRIGGNjIjSyNFcUr7cw93ZqMFmedpHy5c1GvvN2c84bdYFhdERbZfEXXUjJGFqKu2Y/exec";
+      
+      // Отправляем напрямую в Google Apps Script.
+      // Используем 'no-cors' режим, чтобы избежать проблем с CORS на статических платформах (например, GitHub Pages).
+      await fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      success = true;
 
       if (success) {
         setSubmitStatus('success');
