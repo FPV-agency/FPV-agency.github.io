@@ -19,20 +19,36 @@ export const Services: React.FC<ServicesProps> = ({ t, onConceptClick }) => {
   ];
 
   const handleConceptClick = () => {
-    document.getElementById('footer')?.scrollIntoView({ behavior: 'smooth' });
-    if (onConceptClick) onConceptClick();
+    if (onConceptClick) {
+      onConceptClick();
+    } else {
+      const logoRow = document.getElementById('footer-logo-row');
+      if (logoRow) {
+        const rect = logoRow.getBoundingClientRect();
+        const brandBottomAbsolute = rect.bottom + window.scrollY;
+        const targetScrollY = brandBottomAbsolute - window.innerHeight + 12;
+        window.scrollTo({
+          top: Math.max(0, targetScrollY),
+          behavior: 'smooth'
+        });
+      } else {
+        document.getElementById('footer')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   };
 
   return (
-    <section ref={ref} id="services" className={`py-20 px-4 border-t border-white/5 scroll-mt-[var(--header-height)] ${!isInView ? 'pause-animations' : ''}`}>
+    <section ref={ref} id="services" className={`pt-12 pb-20 px-4 border-t border-white/5 scroll-mt-[var(--header-height)] ${!isInView ? 'pause-animations' : ''}`}>
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4 gradient-text">{t('services-title')}</h2>
           <button
             onClick={handleConceptClick}
-            className="text-xl md:text-2xl font-medium gradient-text-blue-purple cursor-pointer transition-all hover:drop-shadow-[0_0_15px_rgba(41,207,222,0.8)] hover:scale-105 active:scale-95 whitespace-pre-line leading-tight block mx-auto max-w-xl"
+            className="text-xl md:text-2xl font-medium cursor-pointer transition-all hover:scale-105 active:scale-95 whitespace-pre-line leading-tight block mx-auto max-w-xl group"
           >
-            {t('services-concept-title')}
+            <span className="gradient-text-blue-purple border-b border-dashed border-neon-blue/30 group-hover:border-neon-blue/80 group-hover:drop-shadow-[0_0_15px_rgba(41,207,222,0.8)] pb-1 transition-all duration-300 inline-block">
+              {t('services-concept-title')}
+            </span>
           </button>
         </div>
 

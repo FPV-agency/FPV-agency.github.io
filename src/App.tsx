@@ -7,7 +7,10 @@ import { Services } from './components/Services';
 import { Process } from './components/Process';
 import { RatingSection } from './components/RatingSection';
 import { Contact } from './components/Contact';
+import { FAQ } from './components/FAQ';
+import { FloatingActions } from './components/FloatingActions';
 import { translations, Language } from './i18n/translations';
+import { faqCategories } from './data/faqData';
 
 export default function App() {
   const [lang, setLang] = useState<Language>(() => {
@@ -18,13 +21,33 @@ export default function App() {
     return 'en';
   });
   const [highlightedFooterItem, setHighlightedFooterItem] = useState<string | null>(null);
+  const [allFooterBlinking, setAllFooterBlinking] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [feedbackTransfer, setFeedbackTransfer] = useState<{ text: string; category: string } | null>(null);
   const [scheduleRequested, setScheduleRequested] = useState<boolean>(false);
   const [exchangeRequested, setExchangeRequested] = useState<boolean>(false);
   const [conceptRequested, setConceptRequested] = useState<boolean>(false);
   const [interactionRequested, setInteractionRequested] = useState<boolean>(false);
+  const [regulationsRequested, setRegulationsRequested] = useState<boolean>(false);
+  const [regulationsPoint, setRegulationsPoint] = useState<number | null>(null);
+  const [priceRequested, setPriceRequested] = useState<boolean>(false);
+  const [demoRequested, setDemoRequested] = useState<boolean>(false);
+  const [demoTemplateTitle, setDemoTemplateTitle] = useState<string | null>(null);
+  const [vacanciesRequested, setVacanciesRequested] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('');
+  const [showFaq, setShowFaq] = useState<boolean>(false);
+  const [openFooterPopupId, setOpenFooterPopupId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.group\\/footer-item')) {
+        setOpenFooterPopupId(null);
+      }
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,13 +58,13 @@ export default function App() {
       
       let currentSection = '';
       
-      if (roundedProgress >= 15 && roundedProgress <= 33) {
+      if (roundedProgress >= 14 && roundedProgress < 30) {
         currentSection = 'portfolio';
-      } else if (roundedProgress >= 34 && roundedProgress <= 48) {
+      } else if (roundedProgress >= 30 && roundedProgress < 44) {
         currentSection = 'services';
-      } else if (roundedProgress >= 49 && roundedProgress <= 68) {
+      } else if (roundedProgress >= 44 && roundedProgress < 63) {
         currentSection = 'process';
-      } else if (roundedProgress >= 69 && roundedProgress <= 99) {
+      } else if (roundedProgress >= 63 && roundedProgress < 100) {
         currentSection = 'ratings';
       } else if (roundedProgress >= 100) {
         currentSection = 'footer';
@@ -58,57 +81,166 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [activeSection]);
 
+  useEffect(() => {
+    // Generate and inject valid Schema.org FAQPage Structured JSON-LD Data for SEO Robots/Crawlers
+    const faqQuestions = faqCategories.flatMap(cat => cat.items);
+    const schemaData = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqQuestions.map(item => ({
+        "@type": "Question",
+        "name": lang === 'ua' ? item.questionUa : item.questionEn,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": lang === 'ua' ? item.answerUa : item.answerEn
+        }
+      }))
+    };
+
+    let scriptElement = document.getElementById('faq-schema-jsonld') as HTMLScriptElement | null;
+    if (!scriptElement) {
+      scriptElement = document.createElement('script');
+      scriptElement.id = 'faq-schema-jsonld';
+      scriptElement.type = 'application/ld+json';
+      document.head.appendChild(scriptElement);
+    }
+    scriptElement.textContent = JSON.stringify(schemaData, null, 2);
+
+    return () => {
+      // Keep it there or let it clean up; actually it auto-updates whenever language changes!
+    };
+  }, [lang]);
+
   const highlightFooterItem = (id: string) => {
-    setHighlightedFooterItem(id);
-    setTimeout(() => setHighlightedFooterItem(null), 3000); // Clear highlight after 3 seconds
+    const logoRow = document.getElementById('footer-logo-row');
+    if (logoRow) {
+      const rect = logoRow.getBoundingClientRect();
+      const brandBottomAbsolute = rect.bottom + window.scrollY;
+      const targetScrollY = brandBottomAbsolute - window.innerHeight + 12;
+      window.scrollTo({
+        top: Math.max(0, targetScrollY),
+        behavior: 'smooth'
+      });
+    } else {
+      const footerElement = document.getElementById('footer');
+      if (footerElement) {
+        footerElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+    // Delay setting the highlight so that it blinks after scrolling completes
+    setTimeout(() => {
+      setHighlightedFooterItem(id);
+      setTimeout(() => setHighlightedFooterItem(null), 1500); // Clear highlight after 1.5 seconds
+    }, 800);
   };
+
+  const handleCoffeeClick = () => {
+    const logoRow = document.getElementById('footer-logo-row');
+    if (logoRow) {
+      const rect = logoRow.getBoundingClientRect();
+      const brandBottomAbsolute = rect.bottom + window.scrollY;
+      const targetScrollY = brandBottomAbsolute - window.innerHeight + 12;
+      window.scrollTo({
+        top: Math.max(0, targetScrollY),
+        behavior: 'smooth'
+      });
+    } else {
+      const footerElement = document.getElementById('footer');
+      if (footerElement) {
+        footerElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+    // Delay starting the blink for all buttons so that it starts after scrolling completes
+    setTimeout(() => {
+      setAllFooterBlinking(true);
+      setTimeout(() => {
+        setAllFooterBlinking(false);
+      }, 1500);
+    }, 800);
+  };
+
+  const handleNavClick = (id: string) => {
+    if (id === 'footer') {
+      handleCoffeeClick();
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const scrollToOptionsRow = useCallback(() => {
+    setTimeout(() => {
+      const optionsElement = document.getElementById('contact-options-row');
+      const headerElement = document.querySelector('header');
+      if (optionsElement) {
+        const headerHeight = headerElement ? headerElement.offsetHeight : 80;
+        const elementPosition = optionsElement.getBoundingClientRect().top + window.scrollY;
+        const offsetPosition = elementPosition - headerHeight - 16;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 200);
+  }, []);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToOptionsRow();
   };
 
   const handleFeedbackTransfer = (text: string) => {
     setFeedbackTransfer({ text, category: 'feedback' });
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToOptionsRow();
   };
 
   const handleScheduleRequest = () => {
     setScheduleRequested(true);
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToOptionsRow();
   };
 
   const handleExchangeRequest = () => {
     setExchangeRequested(true);
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToOptionsRow();
   };
 
   const handleConceptRequest = () => {
     setConceptRequested(true);
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToOptionsRow();
   };
 
   const handleInteractionRequest = () => {
     setInteractionRequested(true);
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToOptionsRow();
+  };
+
+  const handleRegulationsRequest = () => {
+    setRegulationsRequested(true);
+    scrollToOptionsRow();
+  };
+
+  const handleRegulationsWithPointRequest = (point: number) => {
+    setRegulationsPoint(point);
+    setRegulationsRequested(true);
+    scrollToOptionsRow();
+  };
+
+  const handlePriceRequest = () => {
+    setPriceRequested(true);
+    scrollToOptionsRow();
+  };
+
+  const handleDemoRequest = (title: string) => {
+    setDemoTemplateTitle(title);
+    setDemoRequested(true);
+    scrollToOptionsRow();
+  };
+
+  const handleVacanciesRequest = () => {
+    setVacanciesRequested(true);
+    scrollToOptionsRow();
   };
 
   // Translation helper function
@@ -116,58 +248,72 @@ export default function App() {
     return (translations[lang] as any)[key] || key;
   }, [lang]);
 
-  const FooterItem: React.FC<{ link: any, highlightedId: string | null, onDetailClick?: () => void }> = ({ link, highlightedId, onDetailClick }) => (
-    <div className="relative group/footer-item" id={link.id === 'schedule' ? 'footer-schedule-link' : undefined}>
-      <button 
-        className={`hover:text-neon-blue transition-all duration-500 font-medium cursor-pointer relative ${
-          highlightedId === link.id ? 'text-neon-blue scale-125 shadow-[0_0_25px_rgba(41,207,222,0.8)] z-10' : ''
-        }`}
-      >
-        {link.label}
-        {highlightedId === link.id && (
-          <motion.div 
-            layoutId="footer-highlight"
-            className="absolute -inset-2 border border-neon-blue/50 rounded-lg -z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          />
-        )}
-      </button>
-      {/* Popup Window */}
-      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 pb-4 w-64 transition-all duration-300 z-50 ${
-        highlightedId === link.id 
-          ? 'opacity-100 visible translate-y-0' 
-          : 'opacity-0 invisible translate-y-2 group-hover/footer-item:opacity-100 group-hover/footer-item:visible group-hover/footer-item:translate-y-0'
-      }`}>
-        <div className="bg-gray-900 border border-white/10 p-6 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-xl relative">
-          <h4 className={`font-bold mb-2 text-base gradient-text-blue-purple ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
-            {link.title || link.label}
-          </h4>
-          <div className={`text-white text-xs leading-relaxed whitespace-pre-line ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
-            {link.content}
-          </div>
-          {onDetailClick && (
-            <div className={`mt-4 pt-4 border-t border-white/5 flex ${link.id === 'schedule' || link.id === 'exchange' ? 'justify-center' : 'justify-start'}`}>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (onDetailClick) {
-                    onDetailClick();
-                  }
-                }}
-                className="text-neon-blue text-[10px] font-bold uppercase tracking-widest hover:underline cursor-pointer"
-              >
-                {lang === 'ua' ? 'Детальніше' : 'Details'} →
-              </button>
+  const FooterItem: React.FC<{ link: any, highlightedId: string | null, row: number, onDetailClick?: () => void }> = ({ link, highlightedId, row, onDetailClick }) => {
+    const isHighlighted = highlightedId === link.id;
+    const shouldBlink = isHighlighted || allFooterBlinking;
+    const isPopupOpen = openFooterPopupId === link.id;
+
+    const bottomClass = row === 3 
+      ? 'bottom-[calc(100%+6.5rem)]' 
+      : row === 2 
+        ? 'bottom-[calc(100%+3.25rem)]' 
+        : 'bottom-full';
+
+    return (
+      <div className="relative group/footer-item" id={link.id === 'schedule' ? 'footer-schedule-link' : undefined}>
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpenFooterPopupId(prev => prev === link.id ? null : link.id);
+          }}
+          className={`hover:text-neon-blue transition-all duration-300 font-medium cursor-pointer relative ${
+            shouldBlink ? 'animate-blink-twice text-neon-blue z-10' : ''
+          }`}
+        >
+          {link.label}
+        </button>
+        {/* Popup Window */}
+        <div 
+          className={`absolute left-1/2 -translate-x-1/2 pb-4 w-64 transition-all duration-300 z-50 pointer-events-none before:absolute before:content-[''] before:top-0 before:bottom-[-120px] before:left-1/2 before:-translate-x-1/2 before:w-20 before:z-[-1] ${bottomClass} ${
+            isPopupOpen 
+              ? 'opacity-100 visible translate-y-0 pointer-events-auto' 
+              : 'opacity-0 invisible translate-y-2 lg:group-hover/footer-item:opacity-100 lg:group-hover/footer-item:visible lg:group-hover/footer-item:translate-y-0 lg:group-hover/footer-item:pointer-events-auto'
+          }`}
+        >
+          <div className="bg-gray-900 border border-white/10 p-6 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-xl relative pointer-events-auto">
+            <h4 className={`font-bold mb-2 text-base gradient-text-blue-purple ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
+              {link.title || link.label}
+            </h4>
+            <div className={`text-white text-xs leading-relaxed whitespace-pre-line ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
+              {link.content}
             </div>
-          )}
-          {/* Triangle Arrow */}
-          <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-r border-b border-white/10 rotate-45" />
+            {onDetailClick && (
+              <div className={`mt-4 pt-4 border-t border-white/5 flex ${link.id === 'schedule' || link.id === 'exchange' ? 'justify-center' : 'justify-start'}`}>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setOpenFooterPopupId(null);
+                    if (onDetailClick) {
+                      onDetailClick();
+                    }
+                  }}
+                  className="text-neon-blue text-[10px] font-bold uppercase tracking-widest hover:underline cursor-pointer"
+                >
+                  {lang === 'ua' ? 'Детальніше' : 'Details'} →
+                </button>
+              </div>
+            )}
+            {/* Triangle Arrow */}
+            {row === 1 && (
+              <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-r border-b border-white/10 rotate-45" />
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen overflow-x-hidden">
@@ -177,12 +323,20 @@ export default function App() {
         t={t} 
         onSearch={handleSearch} 
         activeSection={activeSection}
+        onNavClick={handleNavClick}
       />
       
       <main className="overflow-x-hidden">
         <Hero t={t} lang={lang} />
         
-        <Portfolio t={t} />
+        <Portfolio 
+          t={t} 
+          lang={lang}
+          onCoffeeClick={() => highlightFooterItem('regulations')} 
+          onPromoClick={() => highlightFooterItem('regulations')}
+          onDemoClick={handleDemoRequest}
+          onRegulationsSelect={handleRegulationsWithPointRequest}
+        />
         
         <Services t={t} onConceptClick={() => highlightFooterItem('concept')} />
         
@@ -203,11 +357,22 @@ export default function App() {
           clearConceptRequest={() => setConceptRequested(false)}
           isInteractionRequested={interactionRequested}
           clearInteractionRequest={() => setInteractionRequested(false)}
+          isRegulationsRequested={regulationsRequested}
+          clearRegulationsRequest={() => setRegulationsRequested(false)}
+          regulationsScrollPoint={regulationsPoint}
+          clearRegulationsScrollPoint={() => setRegulationsPoint(null)}
+          isPriceRequested={priceRequested}
+          clearPriceRequest={() => setPriceRequested(false)}
+          isDemoRequested={demoRequested}
+          demoTemplateTitle={demoTemplateTitle}
+          clearDemoRequest={() => setDemoRequested(false)}
+          isVacanciesRequested={vacanciesRequested}
+          clearVacanciesRequest={() => setVacanciesRequested(false)}
+          onPromoClick={() => highlightFooterItem('regulations')}
           onScheduleClick={() => {
             highlightFooterItem('schedule');
-            const scheduleLink = document.getElementById('footer-schedule-link');
-            if (scheduleLink) scheduleLink.scrollIntoView({ behavior: 'smooth' });
           }}
+          onHighlightFooterItem={highlightFooterItem}
         />
       </main>
 
@@ -218,19 +383,24 @@ export default function App() {
             <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
               {[
                 { id: 'concept', label: t('footer-concept'), title: t('footer-concept-header'), content: lang === 'ua' ? 'Інформація про наше бачення, підхід та основні принципи роботи.' : 'Information about our vision, approach, and core principles.' },
-                { id: 'regulations', label: t('footer-regulations'), title: t('footer-regulations-header'), content: lang === 'ua' ? 'Индивідуальний дизайн - 50%!\nРекламне партнерство - 50%!\nПраво на використання - 15%!\nЗнижка за промокодом - 10%!' : 'Individual Design - 50%!\nAdvertising Partnership - 50%!\nRight to Use - 15%!\nPromo Code Discount - 10%!' },
+                { id: 'regulations', label: t('footer-regulations'), title: t('footer-regulations-header'), content: lang === 'ua' ? 'Акція «Портфоліо»: -50%!!!\nАкція «Партнер»: -50%!!!\nАкція «Промокодер»: Вигода 5%!\nАкція «Сайт за ціною кави»\n«Приведи друга»: Вигода 5-10%!\n«Клон»: сайт від 1000грн.' : 'Promo "Portfolio": -50%!!!\nPromo "Partner": -50%!!!\nPromo "Promocoder": Benefit 5%!\nPromo "Website for the price of coffee"\n"Bring a Friend": Benefit 5-10%!\n"Clone": website from 1000uah.' },
                 { id: 'interaction', label: t('footer-interaction'), title: t('footer-interaction-header'), content: t('footer-interaction-content') },
                 { id: 'price', label: t('footer-price'), content: lang === 'ua' ? 'Детальний прайс-лист на всі види робіт та послуг.' : 'Detailed price list for all types of work and services.' },
-                { id: 'vacancies', label: t('footer-vacancies'), content: lang === 'ua' ? 'Актуальні вакансії для приєднання до нашої команди.' : 'Current vacancies to join our team.' },
-                { id: 'partners', label: t('footer-partners'), content: lang === 'ua' ? 'Список наших надійних партнерів та умови співпраці.' : 'Our reliable partners and cooperation terms.' }
+                { id: 'vacancies', label: t('footer-vacancies'), title: lang === 'ua' ? 'Вакансії компанії' : 'Company Vacancies', content: lang === 'ua' ? '📁 Бухгалтерія (1)\n📁 Відділ продажів (1)\n📁 Юридичний відділ (1)\n📁 Технічний відділ (2)\n📁 Креативний відділ (9)' : '📁 Accounting (1)\n📁 Sales Department (1)\n📁 Legal Department (1)\n📁 Technical Department (2)\n📁 Creative Department (9)' },
+                { id: 'partners', label: t('footer-partners'), content: lang === 'ua' ? 'Список наших надійних партнеів та умови співпраці.' : 'Our reliable partners and cooperation terms.' }
               ].map((link) => (
                 <FooterItem 
                   key={link.id} 
                   link={link} 
+                  row={1}
                   highlightedId={highlightedFooterItem} 
                   onDetailClick={
                     link.id === 'concept' ? handleConceptRequest : 
-                    link.id === 'interaction' ? handleInteractionRequest : undefined
+                    link.id === 'regulations' ? handleRegulationsRequest :
+                    link.id === 'interaction' ? handleInteractionRequest :
+                    link.id === 'price' ? handlePriceRequest :
+                    link.id === 'vacancies' ? handleVacanciesRequest :
+                    scrollToOptionsRow
                   }
                 />
               ))}
@@ -239,20 +409,9 @@ export default function App() {
             {/* Row 2 */}
             <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
               {[
-                { id: 'sales', label: t('footer-sales'), content: lang === 'ua' ? "Зв'яжіться з нашими менеджерами для обговорення нових проектів." : 'Contact our managers to discuss new projects.' },
-                { id: 'ads', label: t('footer-ads'), content: lang === 'ua' ? 'Обговорення маркетингових стратегій та рекламних кампаній.' : 'Marketing strategies and advertising campaigns.' },
-                { id: 'strategy', label: t('footer-strategy'), content: lang === 'ua' ? 'План розвитку нашої компанії та інноваційні впровадження.' : 'Company development plan and innovative implementations.' }
-              ].map((link) => (
-                <FooterItem key={link.id} link={link} highlightedId={highlightedFooterItem} />
-              ))}
-            </div>
-
-            {/* Row 3 */}
-            <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
-              {[
+                { id: 'faq', label: '(FAQ)', title: t('footer-faq-header'), content: lang === 'ua' ? 'Відповіді на запитання про FPV, процеси розробки та технології.' : 'Answers to questions about FPV, design flow, and technology.' },
                 { id: 'legal', label: t('footer-legal'), content: lang === 'ua' ? 'Юридична підтримка, договори та правові аспекти співпраці.' : 'Legal support, contracts, and legal aspects.' },
                 { id: 'accounting', label: t('footer-accounting'), content: lang === 'ua' ? 'Фінансова звітність, рахунки та питання взаєморозрахунків.' : 'Financial statements, invoices, and payments.' },
-                { id: 'office', label: t('footer-office'), content: lang === 'ua' ? 'Наш головний хаб, де народжуються ідеї та проекти.' : 'Our main hub where ideas and projects are born.' },
                 { 
                   id: 'exchange', 
                   label: t('footer-exchange'), 
@@ -270,10 +429,13 @@ export default function App() {
                 <FooterItem 
                   key={link.id} 
                   link={link} 
+                  row={2} 
                   highlightedId={highlightedFooterItem} 
                   onDetailClick={
+                    link.id === 'faq' ? () => setShowFaq(true) :
                     link.id === 'schedule' ? handleScheduleRequest : 
-                    link.id === 'exchange' ? handleExchangeRequest : undefined
+                    link.id === 'exchange' ? handleExchangeRequest :
+                    scrollToOptionsRow
                   }
                 />
               ))}
@@ -281,9 +443,9 @@ export default function App() {
           </div>
 
           <div className="flex flex-col items-center gap-4 pt-4 border-t border-white/5 w-full max-w-4xl">
-            <div className="flex items-center gap-3">
-              <img src="https://i.ibb.co/d8Qc9k0/FPVlogo.png" alt="FPV Logo" className="h-12 w-auto hover:scale-110 transition-transform" />
-              <span className="font-extrabold text-shimmer-effect text-2xl tracking-tighter">FPV | the Future Pages Vibe</span>
+            <div id="footer-logo-row" className="flex flex-row items-center justify-center gap-3 whitespace-nowrap">
+              <img src="https://i.ibb.co/d8Qc9k0/FPVlogo.png" alt="FPV Logo" className="h-12 w-auto hover:scale-110 transition-transform flex-shrink-0" />
+              <span className="font-extrabold text-shimmer-effect text-lg sm:text-xl md:text-2xl tracking-tighter flex-shrink-0">FPV | the Future Pages Vibe</span>
             </div>
             
             <p className="text-[10px] text-gray-600 opacity-60 max-w-lg text-center leading-tight">
@@ -291,11 +453,34 @@ export default function App() {
             </p>
 
             <div className="text-gray-400 font-medium">
-              © 2022-2026 <span className="font-extrabold text-white">FPV</span> | {t('footer-rights')}.
+              © 2026 <span className="font-extrabold text-white">FPV</span> | {t('footer-rights')}.
             </div>
           </div>
         </div>
       </footer>
+      
+      {/* Dynamic SEO Support Section for Web Crawlers, Robots & Non-JS Search Bots */}
+      <div 
+        className="sr-only" 
+        aria-hidden="true" 
+        style={{ display: 'none', opacity: 0, width: 0, height: 0, overflow: 'hidden' }}
+      >
+        <h2>{lang === 'ua' ? 'Часті запитання про FPV та процес веб-розробки' : 'Frequently Asked Questions about FPV and Web Development Process'}</h2>
+        {faqCategories.map((category) => (
+          <section key={`seo-category-${category.id}`} id={`seo-category-${category.id}`}>
+            <h3>{lang === 'ua' ? category.titleUa : category.titleEn}</h3>
+            {category.items.map((item) => (
+              <article key={`seo-faq-item-${item.id}`}>
+                <h4>{lang === 'ua' ? item.questionUa : item.questionEn}</h4>
+                <p>{lang === 'ua' ? item.answerUa : item.answerEn}</p>
+              </article>
+            ))}
+          </section>
+        ))}
+      </div>
+
+      <FAQ isOpen={showFaq} onClose={() => setShowFaq(false)} lang={lang} />
+      <FloatingActions lang={lang} />
     </div>
   );
 }

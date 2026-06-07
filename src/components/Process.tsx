@@ -17,7 +17,7 @@ export const Process: React.FC<ProcessProps> = ({ t }) => {
   ];
 
   return (
-    <section ref={ref} id="process" className={`py-24 px-4 bg-dark-card border-t border-white/5 scroll-mt-[var(--header-height)] ${!isInView ? 'pause-animations' : ''}`}>
+    <section ref={ref} id="process" className={`pt-8 pb-24 px-4 bg-dark-card border-t border-white/5 scroll-mt-[var(--header-height)] ${!isInView ? 'pause-animations' : ''}`}>
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <motion.h2 
@@ -52,30 +52,27 @@ export const Process: React.FC<ProcessProps> = ({ t }) => {
                 style={{ animationDelay: `${i * 3}s` }}
                 className={`bg-white/5 backdrop-blur-sm rounded-3xl p-12 hover:bg-dark-bg transition-all group relative overflow-hidden min-h-[280px] flex flex-col justify-center cursor-default shadow-lg shadow-black/20 group-hover/process:animate-none ${
                   isEven 
-                    ? 'border-l-2 border-white/10 hover:border-l-neon-blue/60' 
-                    : 'border-r-2 border-white/10 hover:border-r-neon-blue/60'
+                    ? 'border-l-2 border-white/10 hover:border-l-neon-blue/60 process-card-pulse-left' 
+                    : 'border-r-2 border-white/10 hover:border-r-neon-blue/60 process-card-pulse-right'
                 }`}
               >
-                {/* Background Number - Starting exactly from middle line */}
-                <div className="absolute left-1/2 top-0 bottom-0 flex items-center pointer-events-none z-0">
+                {/* Background Number - Elegant alignment on the right */}
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center pointer-events-none z-0">
                   <span 
                     style={{ animationDelay: `${i * 3}s` }}
-                    className="text-[160px] font-black leading-none select-none gradient-step-num group-hover:opacity-100 group-hover:animate-none transition-all duration-500 group-hover/process:animate-none"
+                    className="text-[120px] sm:text-[140px] font-black leading-none select-none gradient-step-num process-number-pulse group-hover:opacity-100 group-hover:animate-none transition-all duration-500 group-hover/process:animate-none"
                   >
                     {step.num}
                   </span>
                 </div>
 
-                <div className="relative z-10 w-full">
-                  <h3 className="text-3xl font-bold mb-6 gradient-text-blue-purple group-hover:font-extrabold group-hover:drop-shadow-[0_0_15px_rgba(0,0,0,1)] transition-all duration-300 inline-block">
+                <div className="relative z-10 w-full pr-12">
+                  <h3 className="text-2xl sm:text-3xl font-bold mb-4 gradient-text-blue-purple group-hover:font-extrabold group-hover:drop-shadow-[0_0_15px_rgba(0,0,0,1)] transition-all duration-300 inline-block">
                     {step.title}
                   </h3>
                   
-                  <div className="relative overflow-hidden h-[3.8rem]">
-                    {/* The "Float" magic: invisible block that pushes only the first line of text */}
-                    <div className="float-right w-1/2 h-[1.9rem] pointer-events-none" />
-                    
-                    <p className="text-gray-300 text-lg leading-[1.9rem] group-hover:font-bold group-hover:text-white group-hover:drop-shadow-[0_2px_10px_rgba(0,0,0,1)] transition-all duration-300 relative z-10">
+                  <div className="relative overflow-visible pb-1">
+                    <p className="text-gray-300 text-sm sm:text-base leading-relaxed group-hover:font-medium group-hover:text-white group-hover:drop-shadow-[0_2px_10px_rgba(0,0,0,1)] transition-all duration-300 relative z-10 line-clamp-3">
                       {step.desc}
                     </p>
                   </div>
