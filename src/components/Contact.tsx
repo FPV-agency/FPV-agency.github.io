@@ -73,6 +73,29 @@ export const Contact: React.FC<ContactProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [promoActionHovered, setPromoActionHovered] = useState<'left' | 'right' | null>(null);
+  const [isLargeScreen, setIsLargeScreen] = useState(true);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isLargeScreen) return;
+    const handleDocumentClick = (e: MouseEvent) => {
+      const container = document.getElementById('promo-container-wrapper');
+      if (container && !container.contains(e.target as Node)) {
+        setIsHovered(false);
+        setPromoActionHovered(null);
+      }
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, [isLargeScreen]);
   const [selectedType, setSelectedType] = useState<'consultation' | 'order' | 'cooperation' | 'feedback' | 'schedule' | 'exchange' | 'concept' | 'interaction' | 'regulations' | 'price' | 'demo' | 'vacancies'>('consultation');
   const [isFeedbackAvailable, setIsFeedbackAvailable] = useState(false);
   const [isScheduleAvailable, setIsScheduleAvailable] = useState(false);
@@ -1167,16 +1190,31 @@ everything will be super, we promise!`
 
               {/* Promo Input positioned at the right end of the row */}
               <div 
-                className="relative w-full md:w-52 h-[48px]"
+                id="promo-container-wrapper"
+                className="relative w-full md:w-52 h-[48px] cursor-pointer"
                 onMouseEnter={() => {
-                  setIsHovered(true);
-                  if (!promoActionHovered) {
-                    setPromoActionHovered('left');
+                  if (isLargeScreen) {
+                    setIsHovered(true);
+                    if (!promoActionHovered) {
+                      setPromoActionHovered('left');
+                    }
                   }
                 }}
                 onMouseLeave={() => {
-                  setIsHovered(false);
-                  setPromoActionHovered(null);
+                  if (isLargeScreen) {
+                    setIsHovered(false);
+                    setPromoActionHovered(null);
+                  }
+                }}
+                onClick={(e) => {
+                  if (!isLargeScreen) {
+                    if (!isHovered) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsHovered(true);
+                      setPromoActionHovered('left');
+                    }
+                  }
                 }}
               >
                 <input 
@@ -1198,7 +1236,7 @@ everything will be super, we promise!`
                     <div className={`absolute inset-y-0 left-0 right-1/2 border-2 border-r-0 rounded-l-full pointer-events-none transition-all duration-300 z-20 ${
                       !isHovered 
                         ? 'border-neon-blue/30' 
-                        : promoActionHovered === 'left'
+                        : (!isLargeScreen || promoActionHovered === 'left')
                         ? 'border-neon-blue shadow-[0_0_12px_rgba(41,207,222,0.4)]'
                         : 'border-white/5'
                     }`} />
@@ -1207,7 +1245,7 @@ everything will be super, we promise!`
                     <div className={`absolute inset-y-0 left-1/2 right-0 border-2 border-l-0 rounded-r-full pointer-events-none transition-all duration-300 z-20 ${
                       !isHovered 
                         ? 'border-neon-blue/30' 
-                        : promoActionHovered === 'right'
+                        : (!isLargeScreen || promoActionHovered === 'right')
                         ? 'border-neon-violet shadow-[0_0_12px_rgba(157,78,221,0.4)]'
                         : 'border-white/5'
                     }`} />
@@ -1216,6 +1254,8 @@ everything will be super, we promise!`
                     <div className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 pointer-events-none transition-all duration-300 z-20 ${
                       !isHovered 
                         ? 'opacity-0' 
+                        : !isLargeScreen
+                        ? 'bg-gradient-to-b from-neon-blue to-neon-violet shadow-[0_0_8px_rgba(157,78,221,0.8)] opacity-100'
                         : promoActionHovered === 'left'
                         ? 'bg-neon-blue shadow-[0_0_8px_rgba(41,207,222,0.8)] opacity-100'
                         : 'bg-neon-violet shadow-[0_0_8px_rgba(157,78,221,0.8)] opacity-100'
@@ -1236,19 +1276,23 @@ everything will be super, we promise!`
                         >*</motion.span>
                       </span>
                     ) : (
-                      <div className="flex w-full h-full items-center z-30">
+                      <div className="flex w-full h-full items-center z-30 animate-fade-in">
                         <button 
                           type="button"
-                          onMouseEnter={() => setPromoActionHovered('left')}
-                          onClick={() => {
+                          onMouseEnter={() => {
+                            if (isLargeScreen) setPromoActionHovered('left');
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isLargeScreen) setPromoActionHovered('left');
                             const input = document.querySelector('input[maxLength="6"]') as HTMLInputElement;
                             input?.focus();
                           }}
                           className={`flex-1 h-full flex items-center justify-center gap-1.5 transition-all duration-300 ${
-                            promoActionHovered === 'left' ? 'bg-transparent' : 'bg-gray-800'
+                            (!isLargeScreen || promoActionHovered === 'left') ? 'bg-transparent' : 'bg-gray-800'
                           }`}
                         >
-                          {promoActionHovered === 'left' && (
+                          {(!isLargeScreen || promoActionHovered === 'left') && (
                             <motion.div 
                               animate={{ opacity: [0, 1, 0] }}
                               transition={{ duration: 0.8, repeat: Infinity }}
@@ -1256,7 +1300,7 @@ everything will be super, we promise!`
                             />
                           )}
                           <span className={`tracking-[0.3em] text-[10px] font-bold mt-0.5 transition-all duration-300 ${
-                            promoActionHovered === 'left' 
+                            (!isLargeScreen || promoActionHovered === 'left') 
                               ? 'text-neon-blue filter drop-shadow-[0_0_8px_rgba(41,207,222,0.8)] scale-105' 
                               : 'text-gray-500'
                           }`}>
@@ -1265,16 +1309,22 @@ everything will be super, we promise!`
                         </button>
                         <button 
                           type="button"
-                          onMouseEnter={() => setPromoActionHovered('right')}
-                          onClick={() => {
+                          onMouseEnter={() => {
+                            if (isLargeScreen) setPromoActionHovered('right');
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isLargeScreen) setPromoActionHovered('right');
                             scrollToRegulationsPoint(3);
+                            setIsHovered(false);
+                            setPromoActionHovered(null);
                           }}
                           className={`flex-1 h-full flex items-center justify-center transition-all duration-300 ${
-                            promoActionHovered === 'right' ? 'bg-transparent' : 'bg-gray-800'
+                            (!isLargeScreen || promoActionHovered === 'right') ? 'bg-transparent' : 'bg-gray-800'
                           }`}
                         >
                           <span className={`text-sm tracking-tighter transition-all duration-300 ${
-                            promoActionHovered === 'right'
+                            (!isLargeScreen || promoActionHovered === 'right')
                               ? 'text-neon-violet font-black filter drop-shadow-[0_0_8px_rgba(157,78,221,0.8)] scale-105'
                               : 'text-gray-500 font-medium'
                           }`}>

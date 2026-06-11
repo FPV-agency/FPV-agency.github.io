@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -252,6 +252,37 @@ export default function App() {
     const isHighlighted = highlightedId === link.id;
     const shouldBlink = isHighlighted || allFooterBlinking;
     const isPopupOpen = openFooterPopupId === link.id;
+    const popupRef = useRef<HTMLDivElement>(null);
+    const [shiftX, setShiftX] = useState<number>(0);
+
+    useEffect(() => {
+      if (!isPopupOpen || !popupRef.current) return;
+      const adjustPosition = () => {
+        const parent = popupRef.current?.parentElement;
+        if (!parent) return;
+        const parentRect = parent.getBoundingClientRect();
+        const parentCenter = parentRect.left + parentRect.width / 2;
+        const viewportWidth = window.innerWidth;
+        const padding = 16; // Min space from screen edge
+        const popupWidth = 256; // w-64 is 256px
+        
+        const defaultLeft = parentCenter - popupWidth / 2;
+        const defaultRight = parentCenter + popupWidth / 2;
+        
+        let localShiftX = 0;
+        if (defaultLeft < padding) {
+          localShiftX = padding - defaultLeft;
+        } else if (defaultRight > viewportWidth - padding) {
+          localShiftX = (viewportWidth - padding) - defaultRight;
+        }
+        
+        setShiftX(localShiftX);
+      };
+      
+      adjustPosition();
+      window.addEventListener('resize', adjustPosition);
+      return () => window.removeEventListener('resize', adjustPosition);
+    }, [isPopupOpen]);
 
     const bottomClass = row === 3 
       ? 'bottom-[calc(100%+6.5rem)]' 
@@ -267,7 +298,7 @@ export default function App() {
             e.stopPropagation();
             setOpenFooterPopupId(prev => prev === link.id ? null : link.id);
           }}
-          className={`hover:text-neon-blue transition-all duration-300 font-medium cursor-pointer relative ${
+          className={`hover:text-neon-blue transition-all duration-300 font-medium cursor-pointer relative py-3 px-4 sm:px-5 ${
             shouldBlink ? 'animate-blink-twice text-neon-blue z-10' : ''
           }`}
         >
@@ -275,6 +306,8 @@ export default function App() {
         </button>
         {/* Popup Window */}
         <div 
+          ref={popupRef}
+          style={shiftX !== 0 ? { transform: `translateX(calc(-50% + ${shiftX}px))` } : {}}
           className={`absolute left-1/2 -translate-x-1/2 pb-4 w-64 transition-all duration-300 z-50 pointer-events-none before:absolute before:content-[''] before:top-0 before:bottom-[-120px] before:left-1/2 before:-translate-x-1/2 before:w-20 before:z-[-1] ${bottomClass} ${
             isPopupOpen 
               ? 'opacity-100 visible translate-y-0 pointer-events-auto' 
@@ -307,7 +340,10 @@ export default function App() {
             )}
             {/* Triangle Arrow */}
             {row === 1 && (
-              <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-r border-b border-white/10 rotate-45" />
+              <div 
+                style={shiftX !== 0 ? { left: `calc(50% - ${shiftX}px)` } : {}}
+                className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-r border-b border-white/10 rotate-45 transition-all duration-300" 
+              />
             )}
           </div>
         </div>
@@ -380,7 +416,7 @@ export default function App() {
         <div className="container mx-auto flex flex-col items-center gap-12 text-sm text-gray-500">
           <div className="flex flex-col items-center gap-6">
             {/* Row 1 */}
-            <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
+            <div className="flex flex-wrap justify-center gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-1 sm:gap-y-2">
               {[
                 { id: 'concept', label: t('footer-concept'), title: t('footer-concept-header'), content: lang === 'ua' ? 'Інформація про наше бачення, підхід та основні принципи роботи.' : 'Information about our vision, approach, and core principles.' },
                 { id: 'regulations', label: t('footer-regulations'), title: t('footer-regulations-header'), content: lang === 'ua' ? 'Акція «Портфоліо»: -50%!!!\nАкція «Партнер»: -50%!!!\nАкція «Промокодер»: Вигода 5%!\nАкція «Сайт за ціною кави»\n«Приведи друга»: Вигода 5-10%!\n«Клон»: сайт від 1000грн.' : 'Promo "Portfolio": -50%!!!\nPromo "Partner": -50%!!!\nPromo "Promocoder": Benefit 5%!\nPromo "Website for the price of coffee"\n"Bring a Friend": Benefit 5-10%!\n"Clone": website from 1000uah.' },
@@ -407,7 +443,7 @@ export default function App() {
             </div>
 
             {/* Row 2 */}
-            <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
+            <div className="flex flex-wrap justify-center gap-x-2 sm:gap-x-3 lg:gap-x-4 gap-y-1 sm:gap-y-2">
               {[
                 { id: 'faq', label: '(FAQ)', title: t('footer-faq-header'), content: lang === 'ua' ? 'Відповіді на запитання про FPV, процеси розробки та технології.' : 'Answers to questions about FPV, design flow, and technology.' },
                 { id: 'legal', label: t('footer-legal'), content: lang === 'ua' ? 'Юридична підтримка, договори та правові аспекти співпраці.' : 'Legal support, contracts, and legal aspects.' },

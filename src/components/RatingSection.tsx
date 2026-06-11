@@ -45,8 +45,40 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
   const [addContacts, setAddContacts] = useState(false);
   const initialBaseCount = 6286;
   const [displayCount, setDisplayCount] = useState(initialBaseCount);
+  
+  const firstCardRef = useRef<HTMLDivElement>(null);
+  const [firstCardHeight, setFirstCardHeight] = useState<number | null>(null);
+  const [isLargeScreen, setIsLargeScreen] = useState(true);
 
   const ratings = [1, 2, 3, 4, 5, 6];
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (!firstCardRef.current) return;
+    
+    const updateHeight = () => {
+      if (firstCardRef.current) {
+        setFirstCardHeight(firstCardRef.current.getBoundingClientRect().height);
+      }
+    };
+
+    updateHeight();
+    
+    const resizeObserver = new ResizeObserver(() => {
+      updateHeight();
+    });
+    
+    resizeObserver.observe(firstCardRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   useEffect(() => {
     // Load persisted state
@@ -79,6 +111,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
     
     setRating(newRating);
     setDisplayCount(newCount);
+    setHover(0); // Clear hover state so that mobile-touch visual highlight resets immediately
     
     // Persist immediately
     localStorage.setItem('fpv-user-rating', newRating.toString());
@@ -134,7 +167,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
     const text = t('rating-feedback-placeholder');
     const parts = text.split(/(анонімні|anonymous)/gi);
     return (
-      <div className="absolute top-8 left-8 pointer-events-none text-gray-600 text-lg leading-relaxed">
+      <div className="absolute top-6 left-6 right-6 sm:top-8 sm:left-8 sm:right-8 pointer-events-none text-gray-600 text-base sm:text-lg leading-relaxed">
         {parts.map((part, i) => 
           (part.toLowerCase() === 'анонімні' || part.toLowerCase() === 'anonymous')
           ? <u key={i} className="decoration-neon-blue decoration-2 underline-offset-4">{part}</u> 
@@ -177,10 +210,11 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
           {/* Stats & Selection Card */}
           <motion.div 
+            ref={firstCardRef}
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="lg:col-span-5 bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-[40px] flex flex-col justify-between"
+            className="lg:col-span-5 bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-[40px] flex flex-col justify-between min-h-[560px] sm:min-h-[600px] lg:min-h-0"
           >
             <div className="mb-6">
               <div className="flex items-center gap-4 mb-4">
@@ -213,21 +247,26 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
               </div>
             </div>
 
+            {/* Пустий абзац для збільшення висоти на мобільних/планшетах */}
+            <p className="h-6 sm:h-8 lg:hidden text-transparent select-none pointer-events-none" aria-hidden="true">
+              &nbsp;
+            </p>
+
             <div className="space-y-4">
               <p className="text-sm font-bold uppercase tracking-widest text-gray-400 text-right">
                 <FirstLetterLarger text={t('rating-your-label')} />
               </p>
               <div 
                 className={`flex justify-between items-center bg-black/40 px-6 py-10 rounded-[32px] transition-all duration-500 shadow-inner border-2 ${
-                  hover === 6 
+                  (hover || rating) === 6 
                     ? 'active-hover !translate-y-0 !scale-100 !z-0 !bg-dark-bg transition-none' 
-                    : hover > 0 
+                    : (hover || rating) > 0 
                       ? 'border-neon-blue' 
                       : 'border-white/5'
                 }`}
-                style={hover > 0 ? { 
-                  boxShadow: `0 0 ${Math.min(hover, 5) * 10}px rgba(41,207,222,${Math.min(hover, 5) * 0.15})`,
-                  borderColor: hover === 6 ? 'transparent' : `rgba(41,207,222,${0.3 + (Math.min(hover, 5) * 0.14)})` 
+                style={(hover || rating) > 0 ? { 
+                  boxShadow: `0 0 ${Math.min(hover || rating, 5) * 10}px rgba(41,207,222,${Math.min(hover || rating, 5) * 0.15})`,
+                  borderColor: (hover || rating) === 6 ? 'transparent' : `rgba(41,207,222,${0.3 + (Math.min(hover || rating, 5) * 0.14)})` 
                 } : {}}
                 onMouseLeave={() => setHover(0)}
               >
@@ -235,7 +274,9 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
                   <button
                     key={star}
                     onClick={() => handleRatingSelect(star)}
-                    onMouseEnter={() => setHover(star)}
+                    onMouseEnter={() => {
+                      if (isLargeScreen) setHover(star);
+                    }}
                     className="relative group transition-transform active:scale-95"
                   >
                     <Star 
@@ -268,36 +309,127 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
             </div>
           </motion.div>
 
-          {/* Feedback Form Column */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            {/* Feedback Form Card */}
+          {/* Feedback Form Card */}
+          {isLargeScreen ? (
+            <div className="lg:col-span-7 flex flex-col gap-6">
+              <motion.div 
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-[40px] flex flex-col shadow-lg flex-grow h-full"
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="bg-neon-violet/20 p-3 rounded-2xl">
+                    <MessageSquare className="text-neon-violet" size={24} />
+                  </div>
+                  <h3 className="text-2xl font-bold gradient-text-blue-purple">{t('rating-feedback-title')}</h3>
+                </div>
+
+                <div className="relative flex-grow flex flex-col gap-6">
+                  <div className="relative flex-grow min-h-[220px] sm:min-h-[260px]">
+                    {!feedback && renderPlaceholder()}
+                    <textarea
+                      id="rating-feedback"
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      className="w-full h-full min-h-[220px] sm:min-h-[260px] bg-black/40 border border-white/5 rounded-3xl p-8 text-white focus:outline-none focus:border-neon-violet/50 transition-colors resize-none text-lg relative z-0"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between pb-2">
+                    <div 
+                      className="flex items-center gap-3 transition-all duration-300 group cursor-pointer select-none"
+                      onClick={() => {
+                        const newVal = !addContacts;
+                        setAddContacts(newVal);
+                        if (newVal) handleFeedbackTransfer();
+                      }}
+                    >
+                      <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all duration-300 ${
+                        addContacts 
+                        ? 'border-neon-blue bg-neon-blue/20 shadow-[0_0_15px_rgba(41,207,222,0.4)]' 
+                        : 'border-white/20 group-hover:border-neon-blue/40'
+                      }`}>
+                        {addContacts && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="w-2 h-2 bg-neon-blue"
+                          />
+                        )}
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${
+                        addContacts ? 'text-neon-blue' : 'text-gray-500 group-hover:text-gray-300'
+                      }`}>
+                        {t('nav-portfolio').includes('По') ? 'додати контакти' : 'add contacts'}
+                      </span>
+                    </div>
+                    
+                    {!rating && (
+                      <p className="text-xs text-neon-violet/60 font-bold uppercase tracking-widest italic animate-pulse">
+                        * <FirstLetterLarger text={t('nav-portfolio').includes('По') ? 'Оберіть оцінку' : 'Select a rating'} />
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Submit Button - Outside of Card for Desktop */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="flex justify-end w-full"
+              >
+                <button 
+                  id="rating-submit"
+                  onClick={handleRatingSubmit}
+                  className={`flex items-center gap-3 px-10 py-5 rounded-2xl font-bold hover:scale-[1.03] active:scale-95 transition-all group disabled:opacity-50 ${
+                    rating > 0 
+                      ? 'bg-neon-blue text-white shadow-[0_0_25px_rgba(41,207,222,0.6)]' 
+                      : 'bg-neon-violet text-white shadow-[0_0_15px_rgba(95,75,161,0.2)]'
+                  }`}
+                  disabled={!rating}
+                >
+                  <span className={rating > 0 ? 'gradient-text-purple-pink' : ''}>
+                    {t('rating-submit-btn')}
+                  </span>
+                  <div className={rating > 0 ? 'text-neon-pink' : ''}>
+                    <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  </div>
+                </button>
+              </motion.div>
+            </div>
+          ) : (
             <motion.div 
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-[40px] flex flex-col shadow-lg flex-grow h-full"
+              className="lg:col-span-7 bg-white/5 backdrop-blur-xl border border-white/10 p-8 sm:p-10 rounded-[40px] flex flex-col shadow-lg justify-between"
+              style={{ height: firstCardHeight ? `${firstCardHeight}px` : 'auto' }}
             >
-              <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-4 mb-6 flex-shrink-0">
                 <div className="bg-neon-violet/20 p-3 rounded-2xl">
                   <MessageSquare className="text-neon-violet" size={24} />
                 </div>
                 <h3 className="text-2xl font-bold gradient-text-blue-purple">{t('rating-feedback-title')}</h3>
               </div>
 
-              <div className="relative flex-grow flex flex-col gap-6">
-                <div className="relative flex-grow min-h-[220px] sm:min-h-[260px]">
+              <div className="relative flex-1 flex flex-col gap-4 min-h-0">
+                <div className="relative flex-1 min-h-[220px] sm:min-h-[260px]">
                   {!feedback && renderPlaceholder()}
                   <textarea
-                    id="rating-feedback"
+                    id="rating-feedback-mobile"
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
-                    className="w-full h-full min-h-[220px] sm:min-h-[260px] bg-black/40 border border-white/5 rounded-3xl p-8 text-white focus:outline-none focus:border-neon-violet/50 transition-colors resize-none text-lg relative z-0"
+                    className="w-full h-full bg-black/40 border border-white/5 rounded-3xl p-6 text-white focus:outline-none focus:border-neon-violet/50 transition-colors resize-none text-base sm:text-lg relative z-0 overflow-y-auto"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between pb-2">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 flex-shrink-0 mt-auto">
+                  {/* Left: Add contacts */}
                   <div 
-                    className="flex items-center gap-3 transition-all duration-300 group cursor-pointer select-none"
+                    className="flex items-center gap-3 transition-all duration-300 group cursor-pointer select-none self-start sm:self-auto"
                     onClick={() => {
                       const newVal = !addContacts;
                       setAddContacts(newVal);
@@ -323,42 +455,37 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
                       {t('nav-portfolio').includes('По') ? 'додати контакти' : 'add contacts'}
                     </span>
                   </div>
-                  
-                  {!rating && (
-                    <p className="text-xs text-neon-violet/60 font-bold uppercase tracking-widest italic animate-pulse">
-                      * <FirstLetterLarger text="Оберіть оцінку" />
-                    </p>
-                  )}
+
+                  {/* Right: Submit Button */}
+                  <button 
+                    id="rating-submit-mobile"
+                    onClick={handleRatingSubmit}
+                    className={`flex items-center gap-3 px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-bold hover:scale-[1.03] active:scale-95 transition-all group disabled:opacity-50 w-full sm:w-auto justify-center ${
+                      rating > 0 
+                        ? 'bg-neon-blue text-white shadow-[0_0_25px_rgba(41,207,222,0.6)]' 
+                        : 'bg-neon-violet text-white shadow-[0_0_15px_rgba(95,75,161,0.2)]'
+                    }`}
+                    disabled={!rating}
+                  >
+                    <span className={rating > 0 ? 'gradient-text-purple-pink' : ''}>
+                      {t('rating-submit-btn')}
+                    </span>
+                    <div className={rating > 0 ? 'text-neon-pink' : ''}>
+                      <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    </div>
+                  </button>
                 </div>
+
+                {!rating && (
+                  <div className="text-center sm:text-right flex-shrink-0 -mt-1">
+                    <p className="text-xs text-neon-violet/60 font-bold uppercase tracking-widest italic animate-pulse">
+                      * <FirstLetterLarger text={t('nav-portfolio').includes('По') ? 'Оберіть оцінку' : 'Select a rating'} />
+                    </p>
+                  </div>
+                )}
               </div>
             </motion.div>
-
-            {/* Submit Button - Moved outside of the Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="flex justify-end w-full"
-            >
-              <button 
-                id="rating-submit"
-                onClick={handleRatingSubmit}
-                className={`flex items-center gap-3 px-10 py-5 rounded-2xl font-bold hover:scale-[1.03] active:scale-95 transition-all group disabled:opacity-50 ${
-                  rating > 0 
-                    ? 'bg-neon-blue text-white shadow-[0_0_25px_rgba(41,207,222,0.6)]' 
-                    : 'bg-neon-violet text-white shadow-[0_0_15px_rgba(95,75,161,0.2)]'
-                }`}
-                disabled={!rating}
-              >
-                <span className={rating > 0 ? 'gradient-text-purple-pink' : ''}>
-                  {t('rating-submit-btn')}
-                </span>
-                <div className={rating > 0 ? 'text-neon-pink' : ''}>
-                  <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                </div>
-              </button>
-            </motion.div>
-          </div>
+          )}
         </div>
       </div>
     </section>

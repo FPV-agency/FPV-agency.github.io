@@ -400,14 +400,15 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
 
     const isUah = t('currency') === '₴';
     const currency = t('currency');
+    const isMobileOrTablet = windowWidth < 1024;
     
     if (isUah) {
-      const prefix = info.hasFrom ? 'від ' : '';
+      const prefix = info.hasFrom ? (isMobileOrTablet ? '> ' : 'від ') : '';
       const formatted = info.priceUah.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
       return `${prefix}${currency}${formatted}`;
     } else {
       const usdValue = info.priceUah / 45;
-      const prefix = info.hasFrom ? 'from ' : '';
+      const prefix = info.hasFrom ? (isMobileOrTablet ? '> ' : 'from ') : '';
       const formatted = usdValue.toLocaleString('en-US', { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 
