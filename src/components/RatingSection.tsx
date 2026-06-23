@@ -135,7 +135,7 @@ export const RatingSection: React.FC<RatingSectionProps> = ({ t, onAddFeedbackTo
     };
 
     try {
-      const gasUrl = (import.meta as any).env?.VITE_GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxRIGGNjIjSyNFcUr7cw93ZqMFmedpHy5c1GvvN2c84bdYFhdERbZfEXXUjJGFqKu2Y/exec";
+      const gasUrl = (import.meta as any).env?.VITE_GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/library/d/1kM_o0vCwheLOFnIdgFxCmAZVLFElci2pnu_-Ffvgh6XtT1Q4mEhDBqfr/9";
       await fetch(gasUrl, {
         method: 'POST',
         mode: 'no-cors',

@@ -319,12 +319,12 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t, onSearch, acti
           </div>
 
           <a 
-            href="#contact" 
+            href="#order" 
             onClick={(e) => {
-              window.location.hash = '#contact';
+              window.location.hash = '#order';
               if (onNavClick) {
                 e.preventDefault();
-                onNavClick('contact');
+                onNavClick('order');
               }
             }}
             className="btn-primary px-6 py-3 rounded-full font-bold text-sm flex items-center justify-center hover:shadow-[0_0_20px_rgba(41,207,222,0.5)] hover:scale-105 transition-all duration-300 w-max"
@@ -383,13 +383,13 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang, t, onSearch, acti
                 <div className={`px-4 py-1 rounded-full text-xs font-bold transition ${lang === 'en' ? 'bg-neon-blue text-white' : 'text-gray-400'}`}>EN</div>
               </div>
               <a 
-                href="#contact" 
+                href="#order" 
                 onClick={(e) => {
                   setIsMenuOpen(false);
-                  window.location.hash = '#contact';
+                  window.location.hash = '#order';
                   if (onNavClick) {
                     e.preventDefault();
-                    onNavClick('contact');
+                    onNavClick('order');
                   }
                 }} 
                 className="btn-primary px-6 py-2 rounded-full text-xs font-bold flex items-center justify-center hover:shadow-[0_0_15px_rgba(41,207,222,0.4)] transition-all"

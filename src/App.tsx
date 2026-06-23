@@ -12,6 +12,129 @@ import { FloatingActions } from './components/FloatingActions';
 import { translations, Language } from './i18n/translations';
 import { faqCategories } from './data/faqData';
 
+interface FooterItemProps {
+  link: any;
+  highlightedId: string | null;
+  row: number;
+  allFooterBlinking: boolean;
+  openFooterPopupId: string | null;
+  setOpenFooterPopupId: React.Dispatch<React.SetStateAction<string | null>>;
+  lang: Language;
+  onDetailClick?: () => void;
+}
+
+const FooterItem: React.FC<FooterItemProps> = ({ 
+  link, 
+  highlightedId, 
+  row, 
+  allFooterBlinking, 
+  openFooterPopupId, 
+  setOpenFooterPopupId, 
+  lang, 
+  onDetailClick 
+}) => {
+  const isHighlighted = highlightedId === link.id;
+  const shouldBlink = isHighlighted || allFooterBlinking;
+  const isPopupOpen = openFooterPopupId === link.id;
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [shiftX, setShiftX] = useState<number>(0);
+
+  useEffect(() => {
+    if (!isPopupOpen || !popupRef.current) return;
+    const adjustPosition = () => {
+      const parent = popupRef.current?.parentElement;
+      if (!parent) return;
+      const parentRect = parent.getBoundingClientRect();
+      const parentCenter = parentRect.left + parentRect.width / 2;
+      const viewportWidth = window.innerWidth;
+      const padding = 16; // Min space from screen edge
+      const popupWidth = 256; // w-64 is 256px
+      
+      const defaultLeft = parentCenter - popupWidth / 2;
+      const defaultRight = parentCenter + popupWidth / 2;
+      
+      let localShiftX = 0;
+      if (defaultLeft < padding) {
+        localShiftX = padding - defaultLeft;
+      } else if (defaultRight > viewportWidth - padding) {
+        localShiftX = (viewportWidth - padding) - defaultRight;
+      }
+      
+      setShiftX(localShiftX);
+    };
+    
+    adjustPosition();
+    window.addEventListener('resize', adjustPosition);
+    return () => window.removeEventListener('resize', adjustPosition);
+  }, [isPopupOpen]);
+
+  const bottomClass = row === 3 
+    ? 'bottom-[calc(100%+6.5rem)]' 
+    : row === 2 
+      ? 'bottom-[calc(100%+3.25rem)]' 
+      : 'bottom-full';
+
+  return (
+    <div className="relative group/footer-item" id={link.id === 'schedule' ? 'footer-schedule-link' : undefined}>
+      <button 
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpenFooterPopupId(prev => prev === link.id ? null : link.id);
+        }}
+        className={`hover:text-neon-blue transition-all duration-300 font-medium cursor-pointer relative py-3 px-4 sm:px-5 ${
+          shouldBlink ? 'animate-blink-twice text-neon-blue z-10' : ''
+        }`}
+      >
+        {link.label}
+      </button>
+      {/* Popup Window */}
+      <div 
+        ref={popupRef}
+        style={shiftX !== 0 ? { transform: `translateX(calc(-50% + ${shiftX}px))` } : {}}
+        className={`absolute left-1/2 -translate-x-1/2 pb-4 w-64 transition-all duration-300 z-50 pointer-events-none before:absolute before:content-[''] before:top-0 before:bottom-[-120px] before:left-1/2 before:-translate-x-1/2 before:w-20 before:z-[-1] ${bottomClass} ${
+          isPopupOpen 
+            ? 'opacity-100 visible translate-y-0 pointer-events-auto' 
+            : 'opacity-0 invisible translate-y-2 lg:group-hover/footer-item:opacity-100 lg:group-hover/footer-item:visible lg:group-hover/footer-item:translate-y-0 lg:group-hover/footer-item:pointer-events-auto'
+        }`}
+      >
+        <div className="bg-gray-900 border border-white/10 p-6 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-xl relative pointer-events-auto">
+          <h4 className={`font-bold mb-2 text-base gradient-text-blue-purple ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
+            {link.title || link.label}
+          </h4>
+          <div className={`text-white text-xs leading-relaxed whitespace-pre-line ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
+            {link.content}
+          </div>
+          {onDetailClick && (
+            <div className={`mt-4 pt-4 border-t border-white/5 flex ${link.id === 'schedule' || link.id === 'exchange' ? 'justify-center' : 'justify-start'}`}>
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOpenFooterPopupId(null);
+                  if (onDetailClick) {
+                    onDetailClick();
+                  }
+                }}
+                className="text-neon-blue text-[10px] font-bold uppercase tracking-widest hover:underline cursor-pointer"
+              >
+                {lang === 'ua' ? 'Детальніше' : 'Details'} →
+              </button>
+            </div>
+          )}
+          {/* Triangle Arrow */}
+          {row === 1 && (
+            <div 
+              style={shiftX !== 0 ? { left: `calc(50% - ${shiftX}px)` } : {}}
+              className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-r border-b border-white/10 rotate-45 transition-all duration-300" 
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [lang, setLang] = useState<Language>(() => {
     const userLang = (navigator.language || (navigator as any).userLanguage)?.toLowerCase() || '';
@@ -248,109 +371,6 @@ export default function App() {
     return (translations[lang] as any)[key] || key;
   }, [lang]);
 
-  const FooterItem: React.FC<{ link: any, highlightedId: string | null, row: number, onDetailClick?: () => void }> = ({ link, highlightedId, row, onDetailClick }) => {
-    const isHighlighted = highlightedId === link.id;
-    const shouldBlink = isHighlighted || allFooterBlinking;
-    const isPopupOpen = openFooterPopupId === link.id;
-    const popupRef = useRef<HTMLDivElement>(null);
-    const [shiftX, setShiftX] = useState<number>(0);
-
-    useEffect(() => {
-      if (!isPopupOpen || !popupRef.current) return;
-      const adjustPosition = () => {
-        const parent = popupRef.current?.parentElement;
-        if (!parent) return;
-        const parentRect = parent.getBoundingClientRect();
-        const parentCenter = parentRect.left + parentRect.width / 2;
-        const viewportWidth = window.innerWidth;
-        const padding = 16; // Min space from screen edge
-        const popupWidth = 256; // w-64 is 256px
-        
-        const defaultLeft = parentCenter - popupWidth / 2;
-        const defaultRight = parentCenter + popupWidth / 2;
-        
-        let localShiftX = 0;
-        if (defaultLeft < padding) {
-          localShiftX = padding - defaultLeft;
-        } else if (defaultRight > viewportWidth - padding) {
-          localShiftX = (viewportWidth - padding) - defaultRight;
-        }
-        
-        setShiftX(localShiftX);
-      };
-      
-      adjustPosition();
-      window.addEventListener('resize', adjustPosition);
-      return () => window.removeEventListener('resize', adjustPosition);
-    }, [isPopupOpen]);
-
-    const bottomClass = row === 3 
-      ? 'bottom-[calc(100%+6.5rem)]' 
-      : row === 2 
-        ? 'bottom-[calc(100%+3.25rem)]' 
-        : 'bottom-full';
-
-    return (
-      <div className="relative group/footer-item" id={link.id === 'schedule' ? 'footer-schedule-link' : undefined}>
-        <button 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setOpenFooterPopupId(prev => prev === link.id ? null : link.id);
-          }}
-          className={`hover:text-neon-blue transition-all duration-300 font-medium cursor-pointer relative py-3 px-4 sm:px-5 ${
-            shouldBlink ? 'animate-blink-twice text-neon-blue z-10' : ''
-          }`}
-        >
-          {link.label}
-        </button>
-        {/* Popup Window */}
-        <div 
-          ref={popupRef}
-          style={shiftX !== 0 ? { transform: `translateX(calc(-50% + ${shiftX}px))` } : {}}
-          className={`absolute left-1/2 -translate-x-1/2 pb-4 w-64 transition-all duration-300 z-50 pointer-events-none before:absolute before:content-[''] before:top-0 before:bottom-[-120px] before:left-1/2 before:-translate-x-1/2 before:w-20 before:z-[-1] ${bottomClass} ${
-            isPopupOpen 
-              ? 'opacity-100 visible translate-y-0 pointer-events-auto' 
-              : 'opacity-0 invisible translate-y-2 lg:group-hover/footer-item:opacity-100 lg:group-hover/footer-item:visible lg:group-hover/footer-item:translate-y-0 lg:group-hover/footer-item:pointer-events-auto'
-          }`}
-        >
-          <div className="bg-gray-900 border border-white/10 p-6 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-xl relative pointer-events-auto">
-            <h4 className={`font-bold mb-2 text-base gradient-text-blue-purple ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
-              {link.title || link.label}
-            </h4>
-            <div className={`text-white text-xs leading-relaxed whitespace-pre-line ${link.id === 'schedule' || link.id === 'exchange' ? 'text-center' : 'text-left'}`}>
-              {link.content}
-            </div>
-            {onDetailClick && (
-              <div className={`mt-4 pt-4 border-t border-white/5 flex ${link.id === 'schedule' || link.id === 'exchange' ? 'justify-center' : 'justify-start'}`}>
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setOpenFooterPopupId(null);
-                    if (onDetailClick) {
-                      onDetailClick();
-                    }
-                  }}
-                  className="text-neon-blue text-[10px] font-bold uppercase tracking-widest hover:underline cursor-pointer"
-                >
-                  {lang === 'ua' ? 'Детальніше' : 'Details'} →
-                </button>
-              </div>
-            )}
-            {/* Triangle Arrow */}
-            {row === 1 && (
-              <div 
-                style={shiftX !== 0 ? { left: `calc(50% - ${shiftX}px)` } : {}}
-                className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-r border-b border-white/10 rotate-45 transition-all duration-300" 
-              />
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen overflow-x-hidden">
       <Header 
@@ -430,6 +450,10 @@ export default function App() {
                   link={link} 
                   row={1}
                   highlightedId={highlightedFooterItem} 
+                  allFooterBlinking={allFooterBlinking}
+                  openFooterPopupId={openFooterPopupId}
+                  setOpenFooterPopupId={setOpenFooterPopupId}
+                  lang={lang}
                   onDetailClick={
                     link.id === 'concept' ? handleConceptRequest : 
                     link.id === 'regulations' ? handleRegulationsRequest :
@@ -467,6 +491,10 @@ export default function App() {
                   link={link} 
                   row={2} 
                   highlightedId={highlightedFooterItem} 
+                  allFooterBlinking={allFooterBlinking}
+                  openFooterPopupId={openFooterPopupId}
+                  setOpenFooterPopupId={setOpenFooterPopupId}
+                  lang={lang}
                   onDetailClick={
                     link.id === 'faq' ? () => setShowFaq(true) :
                     link.id === 'schedule' ? handleScheduleRequest : 
