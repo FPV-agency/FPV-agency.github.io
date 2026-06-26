@@ -755,7 +755,7 @@ everything will be super, we promise!`
 
     try {
       let success = false;
-      const gasUrl = (import.meta as any).env?.VITE_GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/library/d/1kM_o0vCwheLOFnIdgFxCmAZVLFElci2pnu_-Ffvgh6XtT1Q4mEhDBqfr/9";
+      const gasUrl = (import.meta as any).env?.VITE_GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbzM8oA0WhkFFETFLmmDooHrVbCGXcLSk-O_TNASr5eBIbd6f1C-SUnN3GRWcJr2kDdr/exec";
       
       // Отправляем напрямую в Google Apps Script.
       // Используем 'no-cors' режим, чтобы избежать проблем с CORS на статических платформах (например, GitHub Pages).

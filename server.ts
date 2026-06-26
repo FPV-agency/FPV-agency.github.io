@@ -16,7 +16,7 @@ async function startServer() {
   // API Route for Google Apps Script Web App (Website -> GAS -> Telegram)
   app.post("/api/contact", async (req, res) => {
     const { name, contact, type, promo, message } = req.body;
-    const gasUrl = process.env.GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxRIGGNjIjSyNFcUr7cw93ZqMFmedpHy5c1GvvN2c84bdYFhdERbZfEXXUjJGFqKu2Y/exec";
+    const gasUrl = process.env.GOOGLE_APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbzM8oA0WhkFFETFLmmDooHrVbCGXcLSk-O_TNASr5eBIbd6f1C-SUnN3GRWcJr2kDdr/exec";
 
     try {
       const response = await fetch(gasUrl, {
