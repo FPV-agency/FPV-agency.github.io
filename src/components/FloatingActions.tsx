@@ -63,19 +63,9 @@ export const FloatingActions: React.FC<FloatingActionsProps> = ({ lang }) => {
     };
   }, [isVisible]);
 
-  // Handle smooth scroll to contact section
+  // Handle click on chat button to open Telegram chat by ID
   const handleChatClick = () => {
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-      // Focus on contact name input if it exists
-      setTimeout(() => {
-        const nameInput = document.getElementById('contact-name');
-        if (nameInput) {
-          nameInput.focus();
-        }
-      }, 800);
-    }
+    window.location.href = 'tg://user?id=7404302311';
   };
 
   if (!isVisible) return null;
@@ -168,7 +158,7 @@ export const FloatingActions: React.FC<FloatingActionsProps> = ({ lang }) => {
             style={{ pointerEvents: isHoveredChat ? 'auto' : 'none' }}
             onClick={handleChatClick}
           >
-            {lang === 'ua' ? 'Перейти до чату' : 'Go to Chat'}
+            {lang === 'ua' ? 'Написати в Telegram' : 'Message on Telegram'}
           </motion.div>
 
           {/* Glowing Animated Outer Pulse Rings */}
