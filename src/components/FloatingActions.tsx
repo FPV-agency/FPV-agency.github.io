@@ -63,9 +63,9 @@ export const FloatingActions: React.FC<FloatingActionsProps> = ({ lang }) => {
     };
   }, [isVisible]);
 
-  // Handle click on chat button to open Telegram chat by ID
+  // Handle click on chat button to open Telegram chat by username
   const handleChatClick = () => {
-    window.location.href = 'tg://user?id=7404302311';
+    window.open('https://t.me/fpv_agency', '_blank');
   };
 
   if (!isVisible) return null;
@@ -158,7 +158,7 @@ export const FloatingActions: React.FC<FloatingActionsProps> = ({ lang }) => {
             style={{ pointerEvents: isHoveredChat ? 'auto' : 'none' }}
             onClick={handleChatClick}
           >
-            {lang === 'ua' ? 'Написати в Telegram' : 'Message on Telegram'}
+            {lang === 'ua' ? 'Перейти до чату' : 'Go to Chat'}
           </motion.div>
 
           {/* Glowing Animated Outer Pulse Rings */}
