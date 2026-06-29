@@ -80,6 +80,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
   const [forcedActiveId, setForcedActiveId] = useState<number | null>(null);
   const [isHoverScrolling, setIsHoverScrolling] = useState(false);
+  const [hoveredCardId, setHoveredCardId] = useState<number | null>(null);
 
   const scrollInterval = useRef<NodeJS.Timeout | null>(null);
   const dotsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -176,7 +177,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
     trigger();
 
     if (scrollInterval.current) clearInterval(scrollInterval.current);
-    scrollInterval.current = setInterval(trigger, 3200);
+    scrollInterval.current = setInterval(trigger, 1500);
   };
 
   const stopHoverScroll = () => {
@@ -299,7 +300,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
   // Watchdog timer to force snapped indexing when CSS transitions do not fire or are interrupted
   useEffect(() => {
     if (!isTransitioning) return;
-    const duration = isHoverScrolling ? 12800 : 3200;
+    const duration = isHoverScrolling ? 1500 : 3200;
     const paddingBuffer = 150; // Safely wait slightly longer than transition duration
     
     const timer = setTimeout(() => {
@@ -314,6 +315,16 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
 
     return () => clearTimeout(timer);
   }, [currentIndex, isTransitioning, isHoverScrolling]);
+
+  // Monitor hovered card and stop scrolling if it reaches the middle
+  useEffect(() => {
+    if (hoveredCardId !== null && isHoverScrolling) {
+      const hasHoveredCardInMiddle = items.some((item, idx) => item.id === hoveredCardId && getCardStatus(idx) === 'middle');
+      if (hasHoveredCardInMiddle) {
+        stopHoverScroll();
+      }
+    }
+  }, [currentIndex, hoveredCardId, isHoverScrolling]);
 
   // Auto-play timer with tab visibility checking to prevent offscreen runaway
   useEffect(() => {
@@ -490,21 +501,12 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
               className="portfolio-carousel-container relative"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
+              onMouseLeave={() => {
+                if (!isMobile.current) {
+                  stopHoverScroll();
+                }
+              }}
             >
-              {/* Sides of the screen/wrapper hover zones that trigger scrolling */}
-              <div 
-                className="absolute left-0 top-0 bottom-12 w-16 md:w-20 z-30 cursor-w-resize hidden lg:block"
-                onMouseEnter={() => startHoverScroll('left')}
-                onMouseLeave={stopHoverScroll}
-                onClick={prevSlide}
-              />
-              <div 
-                className="absolute right-0 top-0 bottom-12 w-16 md:w-20 z-30 cursor-e-resize hidden lg:block"
-                onMouseEnter={() => startHoverScroll('right')}
-                onMouseLeave={stopHoverScroll}
-                onClick={nextSlide}
-              />
-
               <div className="portfolio-carousel-wrapper">
                 <div 
                   className="flex"
@@ -512,7 +514,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
                   style={{ 
                     transform: `translateX(-${currentIndex * (100 / (windowWidth < 768 ? 1 : windowWidth < 1024 ? 2 : 3))}%)`,
                     transition: isTransitioning 
-                      ? (isHoverScrolling ? 'transform 12800ms linear' : 'transform 3200ms cubic-bezier(0.16, 1, 0.3, 1)')
+                      ? (isHoverScrolling ? 'transform 1500ms linear' : 'transform 3200ms cubic-bezier(0.16, 1, 0.3, 1)')
                       : 'none'
                   }}
                 >
@@ -522,6 +524,9 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
                     const isRightCropped = cardStatus === 'right-cropped';
                     const isMiddle = cardStatus === 'middle';
                     const originalIndex = originalTemplates.findIndex(item => item.id === template.id);
+
+                    const visibleCount = windowWidth < 768 ? 1 : windowWidth < 1024 ? 2 : 3;
+                    const isBright = i >= currentIndex - 1 && i <= currentIndex + visibleCount;
 
                     return (
                       <div 
@@ -541,20 +546,29 @@ export const Portfolio: React.FC<PortfolioProps> = ({ t, lang, onCoffeeClick, on
                         }}
                         onMouseEnter={() => {
                           if (!isMobile.current) {
-                            setIsPaused(true);
-                            setForcedActiveId(null);
-                            setActiveCardId(null);
+                            setHoveredCardId(template.id);
+                            if (isLeftCropped) {
+                              startHoverScroll('left');
+                            } else if (isRightCropped) {
+                              startHoverScroll('right');
+                            } else {
+                              stopHoverScroll();
+                              setIsPaused(true);
+                              setForcedActiveId(null);
+                              setActiveCardId(null);
+                            }
                           }
                         }}
                         onMouseLeave={() => {
                           if (!isMobile.current) {
-                            setIsPaused(false);
+                            setHoveredCardId(null);
+                            stopHoverScroll();
                           }
                         }}
                       >
                         <div 
                           className={`rounded-3xl pt-6 px-6 pb-4 md:pt-7 md:px-7 md:pb-5 h-full bg-dark-bg transition-all duration-500 relative z-10 gradient-border flex flex-col justify-between
-                            ${isMiddle ? 'portfolio-card group cursor-pointer' : 'opacity-30 scale-95 cursor-pointer pointer-events-auto'}
+                            ${(isBright || isHoverScrolling) ? 'portfolio-card group cursor-pointer' : 'opacity-50 scale-95 cursor-pointer pointer-events-auto'}
                             ${(isMiddle && (activeCardId === template.id || forcedActiveId === template.id)) ? 'active-hover scale-[1.05]' : ''}`}
                         >
                           <div>
