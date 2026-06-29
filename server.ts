@@ -86,6 +86,11 @@ async function startServer() {
       }
     }));
     app.get('*', (req, res) => {
+      // Do not serve index.html for static asset paths or files with extensions
+      if (req.path.startsWith('/assets/') || path.extname(req.path)) {
+        res.status(404).send('Not Found');
+        return;
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
